@@ -90,6 +90,14 @@ DEMOGRAPHICS_TABLE1 = pd.DataFrame(
     columns=["subject_id", "a1c_pct", "sex", "age"],
 )
 
+# GLIMMER paper (Khamesian et al.), Table 3: average per-patient region-loss
+# weights found by their genetic algorithm on OhioT1DM, one set per architecture.
+# w_normal is fixed at 1 in the paper; hypo and hyper are free.
+GLIMMER_PAPER_WEIGHTS = {
+    "cnn_lstm": {"w_hypo": 3.29, "w_normal": 1.0, "w_hyper": 2.38},
+    "transformer": {"w_hypo": 4.67, "w_normal": 1.0, "w_hyper": 1.71},
+}
+
 DATASET_SUMMARY = {
     "name": "AZT1D",
     "doi": "10.17632/gk9m674wcx.1",

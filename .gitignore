@@ -12,3 +12,5 @@ data/processed/*
 
 .ipynb_checkpoints/
 *.egg-info/
+
+.claude/
