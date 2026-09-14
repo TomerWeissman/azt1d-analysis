@@ -8,3 +8,5 @@ ipykernel>=6.29
 nbconvert>=7.16
 scikit-learn>=1.4
 torch>=2.14
+pyarrow>=25.0
+duckdb>=1.5
