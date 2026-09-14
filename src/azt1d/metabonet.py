@@ -42,6 +42,7 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
+from . import cleaning
 from . import reference as ref
 
 DEFAULT_METABONET_PATH = Path.home() / "Downloads" / "metabonet_public.parquet"
@@ -77,13 +78,18 @@ def load_source(
     source_file: str,
     path: Path = DEFAULT_METABONET_PATH,
     subject_ids: list[str] | None = None,
+    clean: bool = True,
 ) -> pd.DataFrame:
     """
-    Load one MetaboNet source dataset onto azt1d's canonical schema.
+    Load one MetaboNet source dataset onto azt1d's canonical schema, cleaned
+    the same way azt1d.loading cleans AZT1D's own raw files (zero-filled
+    bolus/carbs, forward-filled basal, dropped missing-CGM placeholder rows)
+    -- see azt1d.cleaning. Pass clean=False to get MetaboNet's values as-is.
 
-    subject_id comes back as MetaboNet's own string id for that dataset
-    (e.g. "540" for an OhioT1DM patient) -- cast it yourself if a caller
-    needs it numeric, since not every source's ids are guaranteed numeric.
+    subject_id comes back as a native int when every id for this source
+    parses as one (true for AZT1D and OhioT1DM, checked directly), otherwise
+    as MetaboNet's own string id -- not every source's ids are guaranteed
+    numeric, so this doesn't force a cast that would fail for some of them.
     """
     con = duckdb.connect()
     subject_filter = ""
@@ -105,7 +111,7 @@ def load_source(
 
     out = pd.DataFrame(
         {
-            "subject_id": raw["id"],
+            "subject_id": _coerce_subject_ids(raw["id"]),
             ref.EVENT_DATETIME: raw["date"],
             ref.CGM: raw["CGM"],
             ref.BASAL: raw["basal"] * _BASAL_RATE_SCALE,
@@ -116,4 +122,12 @@ def load_source(
     for col in (ref.DEVICE_MODE, ref.BOLUS_TYPE, ref.CORRECTION_DELIVERED, ref.FOOD_DELIVERED):
         out[col] = pd.NA
 
-    return out[["subject_id", *ref.CANONICAL_COLUMNS]]
+    out = out[["subject_id", *ref.CANONICAL_COLUMNS]]
+    return cleaning.clean_canonical_frame(out) if clean else out
+
+
+def _coerce_subject_ids(ids: pd.Series) -> pd.Series:
+    try:
+        return ids.astype(int)
+    except (ValueError, TypeError):
+        return ids

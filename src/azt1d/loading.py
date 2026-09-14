@@ -17,10 +17,10 @@ for, discovered by inspecting the actual files across all 25 subjects:
   azt1d.metrics.device_mode_distribution).
 - `Basal` is logged sparsely (~30-100% of rows depending on subject, irregular
   gaps, not a clean hourly cadence) rather than already forward-filled onto the
-  5-minute CGM grid as the paper's preprocessing section describes. We forward-
-  fill it here (see load_subject_csv) so it reads as "the rate in effect at this
-  timestamp," matching the paper's stated intent even though the raw file
-  doesn't ship it that way.
+  5-minute CGM grid as the paper's preprocessing section describes. Forward-
+  filled in azt1d.cleaning (shared with azt1d.metabonet) so it reads as "the
+  rate in effect at this timestamp," matching the paper's stated intent even
+  though the raw file doesn't ship it that way.
 """
 
 from __future__ import annotations
@@ -31,6 +31,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from . import cleaning
 from . import reference as ref
 
 # Common spellings a real-world export might use for each canonical column.
@@ -51,11 +52,6 @@ NAME_VARIANTS: dict[str, list[str]] = {
     ref.CARB_SIZE: ["carbsize", "carb size", "carbs", "carbohydrates"],
     ref.CGM: ["cgm", "glucose", "cgm (mg/dl)", "cgm_mg_dl", "readings (cgm / bgm)", "readings (cgm/bgm)"],
 }
-
-# Basal is a rate (U/hr); the Tandem t:slim X2 doesn't go meaningfully above this,
-# so anything higher is an export glitch, not a real dose. Found by inspection:
-# some subjects have hour-long stretches logged at 1000-4000+ instead of ~0-3.
-BASAL_MAX_PLAUSIBLE_U_PER_HR = 15.0
 
 _NUMERIC_AGG_COLUMNS = [
     ref.BASAL,
@@ -168,19 +164,12 @@ def load_subject_csv(path: Path, subject_id: int) -> pd.DataFrame:
     df = _collapse_duplicate_timestamps(df)
     df = _clean_categoricals(df)
 
-    for col in ref.ZERO_FILLED_COLUMNS:
-        df[col] = df[col].fillna(0)
-
-    # Drop implausible Basal spikes (export glitches, see BASAL_MAX_PLAUSIBLE_U_PER_HR)
-    # before forward-filling, so a glitch doesn't get smeared across real gaps.
-    df.loc[df[ref.BASAL] > BASAL_MAX_PLAUSIBLE_U_PER_HR, ref.BASAL] = float("nan")
-    # Basal is delivered continuously but only logged when it changes (or
-    # irregularly) in the raw files; forward-fill so every row carries the
-    # rate actually in effect. bfill covers any rows before the first reading.
-    df[ref.BASAL] = df[ref.BASAL].ffill().bfill()
-
+    # Zero-filling missing bolus/carb readings, dropping implausible Basal
+    # spikes, and forward-filling Basal to a per-timestep rate all happen in
+    # azt1d.cleaning, shared with azt1d.metabonet so every dataset gets the
+    # same treatment regardless of which loader produced it.
     df.insert(0, "subject_id", subject_id)
-    return df.sort_values(ref.EVENT_DATETIME).reset_index(drop=True)
+    return cleaning.clean_canonical_frame(df)
 
 
 def load_all_subjects(extracted_root: Path) -> pd.DataFrame:
