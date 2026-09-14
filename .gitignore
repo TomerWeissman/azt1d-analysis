@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Raw dataset is large (~776 MB zip) and not ours to redistribute
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+.ipynb_checkpoints/
+*.egg-info/
