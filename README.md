@@ -23,11 +23,15 @@ all of that gap. The clinical picture is more favorable: the weighted loss consi
 trades precision for recall and cuts the most dangerous prediction errors (Clarke Error
 Grid zone D) roughly in half or better, on both datasets.
 
-**Start with [`07_summary.ipynb`](notebooks/07_summary.ipynb)** for the full account in
-one place, insights only, no setup/process cells. It's assembled entirely from
-already-computed output in notebooks 01-06 (see `scripts/build_summary_notebook.py`) --
-nothing in it is recomputed, and it isn't meant to be re-run. Notebooks 01-06 remain the
-full detailed record behind it, methodology and all.
+**Start with [`07_summary.ipynb`](notebooks/07_summary.ipynb)**, a presentation-style
+walkthrough: the goal, the data and what's unusual about it, then the models compared,
+mostly graphs and explanations with code kept out of the way. Model results are labeled
+by what they actually are ("standard training," "fixed danger-weighted," "personalized
+danger-weighted") rather than the internal v0/v1/v3 shorthand used in notebooks 01-06.
+Every chart in it is built from already-saved results (trained models' saved
+predictions, the genetic algorithm's saved search results, see
+`scripts/build_summary_notebook.py`) -- nothing is retrained or re-run to produce it.
+Notebooks 01-06 remain the full detailed record behind it, methodology and all.
 
 ## Notebooks
 
