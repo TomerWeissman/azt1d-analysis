@@ -35,7 +35,7 @@ from nbformat.v4 import new_markdown_cell
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from azt1d import plotting, reference as ref  # noqa: E402
+from azt1d import loading, plotting, reference as ref  # noqa: E402
 from azt1d.glimmer import checkpoint as ckpt  # noqa: E402
 from azt1d.glimmer.clinical import clarke_zone_percentages, dysglycemia_event_metrics  # noqa: E402
 from azt1d.glimmer.train import region_errors  # noqa: E402
@@ -146,6 +146,18 @@ def _src_nb(name):
     return _src_cache[name]
 
 
+def reused_image_only(nbfile, cid):
+    """Like reused(), but keeps only the image output -- for cells whose
+    stored output also includes a table not worth carrying over."""
+    nb = _src_nb(nbfile)
+    cell = next(c for c in nb.cells if c.get("id") == cid)
+    for out in cell.get("outputs", []):
+        data = out.get("data", {})
+        if "image/png" in data:
+            return f'<img src="data:image/png;base64,{data["image/png"]}" style="max-width:100%">'
+    raise ValueError(f"no image output found in {nbfile}/{cid}")
+
+
 def reused(nbfile, cid):
     """Pull a code cell's stored outputs (images/tables/text) out of an
     original notebook and render them as plain HTML -- no code shown."""
@@ -186,6 +198,73 @@ def slug(title):
 # ---------------------------------------------------------------------------
 # Build every model-related chart/table up front
 # ---------------------------------------------------------------------------
+
+print("Loading raw AZT1D data for rebuilt exploration charts...")
+_raw_df = loading.load_real_dataset(ROOT / "data/raw", ROOT / "data/processed")
+
+# Time-of-day risk, rebuilt as two independently-scaled panels -- the
+# original shared-axis version buried hypo's variation under hyper's much
+# larger scale (2% vs 25%), which is exactly the pattern this chart is
+# supposed to show.
+_tagged = _raw_df.copy()
+_tagged["hour"] = _tagged[ref.EVENT_DATETIME].dt.hour
+_time_blocks = {"00:00-06:00": (0, 6), "06:00-12:00": (6, 12), "12:00-18:00": (12, 18), "18:00-24:00": (18, 24)}
+_tagged["block"] = pd.cut(_tagged["hour"], bins=[0, 6, 12, 18, 24], labels=list(_time_blocks.keys()),
+                           right=False, include_lowest=True)
+_tagged["glycemic_state"] = pd.cut(_tagged[ref.CGM], bins=[-np.inf, ref.HYPO_THRESHOLD, ref.HYPER_THRESHOLD, np.inf],
+                                    labels=["hypo", "in_range", "hyper"])
+_block_pct = pd.crosstab(_tagged["block"], _tagged["glycemic_state"], normalize="index") * 100
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
+for ax, region, color, title in [
+    (axes[0], "hypo", plotting.GLUCOSE_BAND_COLORS["hypo"], "Hypoglycemia (<70 mg/dL)"),
+    (axes[1], "hyper", plotting.GLUCOSE_BAND_COLORS["hyper"], "Hyperglycemia (>180 mg/dL)"),
+]:
+    vals = _block_pct[region]
+    bars = ax.bar(range(len(vals)), vals, color=color)
+    for b, v in zip(bars, vals):
+        ax.annotate(f"{v:.1f}%", (b.get_x() + b.get_width() / 2, v), ha="center", va="bottom", fontsize=8)
+    ax.set_xticks(range(len(vals)))
+    ax.set_xticklabels(vals.index, fontsize=9)
+    ax.set_ylim(0, vals.max() * 1.3)
+    ax.set_ylabel("% of readings")
+    ax.set_title(title)
+fig.suptitle("Dysglycemia risk by time of day, whole cohort")
+fig.tight_layout()
+time_of_day_chart = fig_html(fig)
+
+_hyper_worst = _block_pct["hyper"].idxmax()
+_hyper_best = _block_pct["hyper"].idxmin()
+_hypo_worst = _block_pct["hypo"].idxmax()
+TIME_OF_DAY_OBSERVATION = (
+    f"Hyperglycemia climbs steadily through the day, from {_block_pct['hyper'].min():.1f}% "
+    f"overnight ({_hyper_best}) to {_block_pct['hyper'].max():.1f}% in the evening "
+    f"({_hyper_worst}) -- consistent with meals accumulating their effect over the day. "
+    f"Hypoglycemia is a much smaller share throughout, but still highest in the evening "
+    f"({_hypo_worst}, {_block_pct['hypo'].max():.1f}%). Both kinds of risk peak at the same "
+    "time of day, not opposite ends of it."
+)
+
+# Daily carb/bolus/basal totals per subject, as a chart instead of a table --
+# sorted so the outliers are immediately visible instead of buried in 25 rows.
+from azt1d import metrics as _metrics  # noqa: E402
+
+_daily = (
+    _metrics.daily_carb_and_bolus(_raw_df)
+    .groupby("subject_id")[["total_carbs_g", "total_bolus_u", "total_basal_u"]]
+    .mean()
+    .sort_values("total_carbs_g")
+)
+fig, ax = plt.subplots(figsize=(9, 5))
+y = np.arange(len(_daily))
+ax.barh(y, _daily["total_carbs_g"], color=C[3])
+ax.set_yticks(y)
+ax.set_yticklabels(_daily.index, fontsize=7)
+ax.set_xlabel("Average carbs logged per day (grams)")
+ax.set_ylabel("Subject")
+ax.set_title("How much each patient logs eating, per day")
+fig.tight_layout()
+carb_outlier_chart = fig_html(fig)
 
 print("Loading checkpoints and building charts...")
 
@@ -274,15 +353,18 @@ zone_fig = grouped_bar(
 )
 zone_chart_html = fig_html(zone_fig)
 
-# 5. GA weight scatter, AZT1D CNN-LSTM
+# 5. GA weight scatter, AZT1D CNN-LSTM. Only the genuine outliers get a
+# subject-id label -- labeling all 25 makes the tightly-clustered majority
+# unreadable and buries the one point that actually matters.
 ga_weights = load_ga_weights("ga_cnn_lstm")
-fig, ax = plt.subplots(figsize=(6.2, 6))
+fig, ax = plt.subplots(figsize=(6.5, 6))
 xs = [w["w_hypo"] for w in ga_weights.values()]
 ys = [w["w_hyper"] for w in ga_weights.values()]
-ax.scatter(xs, ys, color=C[2], s=30)
+ax.scatter(xs, ys, color=C[2], s=40)
 for sid, w in ga_weights.items():
-    ax.annotate(str(sid), (w["w_hypo"], w["w_hyper"]), fontsize=7, color=plotting.INK_MUTED,
-                xytext=(4, 4), textcoords="offset points")
+    if w["w_hypo"] > 3.0 or w["w_hyper"] > 3.0:
+        ax.annotate(f"patient {sid}", (w["w_hypo"], w["w_hyper"]), fontsize=9,
+                     color=plotting.INK_PRIMARY, xytext=(6, 4), textcoords="offset points")
 paper_w = ref.GLIMMER_PAPER_WEIGHTS["cnn_lstm"]
 ax.axvline(paper_w["w_hypo"], linestyle="--", color=plotting.BASELINE, linewidth=1)
 ax.axhline(paper_w["w_hyper"], linestyle="--", color=plotting.BASELINE, linewidth=1)
@@ -383,7 +465,12 @@ sections.append((2, "The data", [
         "up, and roughly what insulin doses are sized against."
     ),
     md("### Who's in the dataset"),
-    md(reused("01_data_exploration.ipynb", "f3037d49")),
+    md(
+        "25 patients, ages 27-80 (averaging around 59), 13 female and 12 male, with an "
+        "average A1c of 6.64% -- diabetic but reasonably well-controlled as a group "
+        "(A1c under 7% is a common treatment target)."
+    ),
+    md(reused_image_only("01_data_exploration.ipynb", "f3037d49")),
     md("### What one patient's data actually looks like"),
     md(reused("02_glimmer_v0_baseline.ipynb", "7540dc83")),
     md(
@@ -408,8 +495,7 @@ sections.append((3, "What's unusual about this data", [
         "also means the hypo cases a model needs to catch are rare to begin with."
     ),
     md("### Some patients are much harder to predict for than others"),
-    md(reused("01_data_exploration.ipynb", "791b640d")),
-    md(reused("01_data_exploration.ipynb", "f9f55a84")),
+    md(reused_image_only("01_data_exploration.ipynb", "f9f55a84")),
     md(
         "Time spent in the healthy range (70-180 mg/dL) ranges from under 50% for the "
         "toughest-controlled patient to over 90% for the best-controlled one. Later on, "
@@ -418,20 +504,16 @@ sections.append((3, "What's unusual about this data", [
         "specifically, but because their own data is intrinsically harder to forecast."
     ),
     md("### A few patients are extreme outliers in how much they log"),
-    md(reused("01_data_exploration.ipynb", "73beeef8")),
+    md(carb_outlier_chart),
     md(
-        "Most patients log a fairly typical amount of carbs and insulin per day, but a "
-        "couple are far outside that range -- one logs an unusually high amount of carbs "
-        "daily, another logs almost none. Worth remembering when a specific patient's "
-        "model results look unusual later: sometimes it's the data, not the model."
+        "Most patients log a fairly typical amount of carbs per day, but a couple are far "
+        "outside that range -- one logs almost none, one logs far more than anyone else. "
+        "Worth remembering when a specific patient's model results look unusual later: "
+        "sometimes it's the data, not the model."
     ),
     md("### Risk isn't spread evenly across the day"),
-    md(reused("01_data_exploration.ipynb", "0f790482")),
-    md(
-        "Both highs and lows cluster at certain times of day rather than happening "
-        "uniformly -- most likely driven by mealtimes and overnight patterns rather than "
-        "a random spread."
-    ),
+    md(time_of_day_chart),
+    md(TIME_OF_DAY_OBSERVATION),
 ]))
 
 sections.append((4, "The models", []))
@@ -444,6 +526,21 @@ sections.append((None, None, [
         "recent stretch of each patient's data is held back and never shown to the model "
         "during training, so every result below is measured on data the model has never "
         "seen."
+    ),
+    md(
+        "**The three training approaches compared throughout this part, defined up front "
+        "since every chart below compares all three side by side:**\n\n"
+        "- **Standard** -- trained the ordinary way, to be right on average across every "
+        "prediction equally.\n"
+        "- **Fixed danger-weighted** -- trained to care more about errors during dangerous "
+        "glucose zones (very high or very low), using one weighting setting applied to "
+        "every patient the same way.\n"
+        "- **Personalized danger-weighted** -- the same idea as fixed danger-weighted, "
+        "except each patient gets their own individually-searched weighting instead of "
+        "one shared setting.\n\n"
+        "Approach 1 below introduces Standard alone. Approaches 2 and 3 each introduce one "
+        "of the danger-weighted approaches in more depth, but their charts show all three "
+        "together for direct comparison."
     ),
 ]))
 
@@ -506,23 +603,40 @@ sections.append((None, "Approach 3: Personalized danger-weighted training", [
         "best-performing ones are combined and mutated, and this repeats until it "
         "converges on that patient's own best setting."
     ),
+    md(
+        "**Why this matters before looking at results:** if one fixed weighting setting "
+        "genuinely fit everyone equally well, personalizing it wouldn't be expected to "
+        "change much. The chart below checks that assumption directly, by plotting the "
+        "actual weights each patient's individual search landed on."
+    ),
     md(ga_scatter_html),
     md(
-        "The weights different patients actually need vary a lot -- some barely need any "
-        "adjustment, a few need a much stronger correction than the fixed setting used "
-        "above. That spread is the reason to expect personalization to help: one setting "
-        "for everyone is a compromise, and compromises fit some people better than others."
+        "It's not a good assumption: most patients cluster near mild corrections, but a "
+        "couple of patients (labeled above) needed much stronger ones -- **patient 9** "
+        "needed the strongest correction on both fronts, **patient 13** needed a strong "
+        "hypo-specific correction with almost no hyper adjustment. The fixed setting (the "
+        "dashed lines, from the paper) doesn't match either the typical patient or these "
+        "outliers particularly well. That spread is exactly why personalization has room "
+        "to help -- one setting for everyone is a compromise, and compromises fit some "
+        "people much better than others."
     ),
 ]))
 
 sections.append((5, "Does this hold up across architectures and datasets", [
     md(
         "Everything above used one architecture (CNN-LSTM) on one dataset (AZT1D), to "
-        "explain the idea clearly. Here's the same three training approaches, both "
-        "architectures, both datasets."
+        "explain the idea clearly with one running example. That's not enough on its own "
+        "to trust the result -- it could just be something specific to that one model "
+        "design or that one group of patients. So the same three training approaches get "
+        "repeated here on a second architecture (CNN-Transformer) and a second, "
+        "independent dataset (OhioT1DM), and the charts below check whether the same "
+        "up-then-partially-down pattern (standard best, fixed danger-weighted worst, "
+        "personalized in between) shows up again."
     ),
+    md("**AZT1D** -- both architectures, all three approaches:"),
     md(az_full_chart),
     md(az_full_table),
+    md("**OhioT1DM** -- the same comparison, on a second, independent dataset:"),
     md(oh_full_chart),
     md(oh_full_table),
     md(
