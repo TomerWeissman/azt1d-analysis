@@ -21,9 +21,13 @@ one fixed population-average weight pair makes plain RMSE/MAE worse than an ordi
 baseline, and a real per-patient genetic-algorithm weight search recovers some but not
 all of that gap. The clinical picture is more favorable: the weighted loss consistently
 trades precision for recall and cuts the most dangerous prediction errors (Clarke Error
-Grid zone D) roughly in half or better, on both datasets. See notebook 06's final section
-for the full account, including the specific, checkable reason this project's numbers
-likely differ from the paper's own.
+Grid zone D) roughly in half or better, on both datasets.
+
+**Start with [`07_summary.ipynb`](notebooks/07_summary.ipynb)** for the full account in
+one place, insights only, no setup/process cells. It's assembled entirely from
+already-computed output in notebooks 01-06 (see `scripts/build_summary_notebook.py`) --
+nothing in it is recomputed, and it isn't meant to be re-run. Notebooks 01-06 remain the
+full detailed record behind it, methodology and all.
 
 ## Notebooks
 
