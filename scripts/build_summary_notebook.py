@@ -566,6 +566,14 @@ sections.append((None, "A first look: what does an ordinary model get wrong", [
 ]))
 
 sections.append((None, "Comparing all three approaches", [
+    md(
+        "As a reminder: **standard** is trained with no special attention to danger "
+        "zones, **fixed danger-weighted** trains every patient with the same (3.29, 2.38) "
+        "weighting toward hypo/hyper errors, and **personalized danger-weighted** trains "
+        "each patient with their own individually-found version of that weighting (see "
+        "the full explanation earlier in this part). Here's what actually happens when all "
+        "three get compared directly, starting with where the errors land."
+    ),
     md(region_chart_html),
     md(
         "This is the actual mechanism: danger-weighting (fixed or personalized) brings "
