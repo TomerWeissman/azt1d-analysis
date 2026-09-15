@@ -262,18 +262,23 @@ az_tf = dataset_runs("", "cnn_transformer")
 oh_lstm = dataset_runs("ohiot1dm_", "cnn_lstm")
 oh_tf = dataset_runs("ohiot1dm_", "cnn_transformer")
 
-# 1. Example forecast plot (Standard CNN-LSTM, AZT1D, subject 1)
-r1 = az_lstm["Standard"][1]
-fig, ax = plt.subplots(figsize=(11, 3.5))
+# 1. Example forecast plot, all three approaches overlaid on the same
+# patient's held-out test data (subject 1, CNN-LSTM, AZT1D). The test data
+# itself is identical across all three -- only the training approach differs
+# -- so all three prediction lines are directly comparable on one chart.
+fig, ax = plt.subplots(figsize=(11, 4))
 n = 700
-ax.plot(r1.y_test[:n], color=plotting.INK_PRIMARY, linewidth=1.3, label="Actual glucose")
-ax.plot(r1.y_pred[:n], color=C[0], linewidth=1.3, label="Model's prediction")
+r_std = az_lstm["Standard"][1]
+ax.plot(r_std.y_test[:n], color=plotting.INK_PRIMARY, linewidth=1.5, label="Actual glucose", zorder=5)
+for label in APPROACHES:
+    r = az_lstm[label][1]
+    ax.plot(r.y_pred[:n], color=APPROACH_COLOR[label], linewidth=1.1, alpha=0.85, label=label)
 ax.axhline(ref.HYPO_THRESHOLD, linestyle="--", color=plotting.GLUCOSE_BAND_COLORS["hypo"], linewidth=1)
 ax.axhline(ref.HYPER_THRESHOLD, linestyle="--", color=plotting.GLUCOSE_BAND_COLORS["hyper"], linewidth=1)
 ax.set_ylabel("Glucose (mg/dL)")
 ax.set_xlabel("Time (5-minute steps)")
-ax.set_title("One patient, held-out test data -- predicting 60 minutes ahead")
-ax.legend(frameon=False)
+ax.set_title("One patient, held-out test data -- all three approaches, predicting 60 minutes ahead")
+ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.0, 1.0))
 fig.tight_layout()
 forecast_chart = fig_html(fig)
 
@@ -550,18 +555,22 @@ sections.append((None, None, [
     ),
 ]))
 
-sections.append((None, "A first look: what does an ordinary model get wrong", [
+sections.append((None, "A first look: one patient, three predictions", [
     md(
-        "Before comparing all three, here's what the **standard** model alone does on one "
-        "patient's held-out data, to see the actual problem the other two approaches are "
-        "trying to fix."
+        "Before the aggregate numbers, here's what all three approaches actually predict "
+        "on the same stretch of one patient's held-out data -- the same real glucose "
+        "values, three different models trying to guess them 60 minutes ahead of time."
     ),
     md(forecast_chart),
     md(
-        "The prediction tracks the real value well in the middle of the range, but lags "
-        "and undershoots right at the sharp highs and lows -- exactly the moments that "
-        "matter most clinically. That gap is what danger-weighted training, fixed or "
-        "personalized, is meant to close."
+        "The standard model (blue) tracks the real value well in the middle of the range, "
+        "but lags and undershoots right at the sharp highs and lows -- exactly the moments "
+        "that matter most clinically. Fixed and personalized danger-weighted (orange and "
+        "green) visibly sit above the standard prediction through most of this stretch, "
+        "including during ordinary, non-dangerous moments -- a visible look at the same "
+        "cost the region-by-region numbers below put a figure on. That same upward lean "
+        "pays off at the sharp peak around step 550, where the danger-weighted lines "
+        "track the true high more closely than standard does."
     ),
 ]))
 
@@ -674,50 +683,53 @@ sections.append((6, "How does this compare to the original GLIMMER paper", [
     ),
     md("### Why the gap? A few theories"),
     md(
-        "None of these are proven. They're ranked below from most to least confident, "
-        "based on how much actual evidence backs each one up, not just how plausible it "
-        "sounds."
+        "None of these are proven. They're written in plain terms below and ranked from "
+        "most to least confident -- based on how much real evidence supports each one, "
+        "not just on how reasonable it sounds."
     ),
     md(
-        "**1. The personalized search here is much smaller than the paper's (most "
-        "confident -- this one has real evidence behind it, not just a guess).** Finding "
-        "each patient's own weights means trying out many candidate settings and keeping "
-        "the best one. This project tries 6 candidates at a time across 6 rounds (21 tries "
-        "total per patient). The paper tries 20 candidates across 25 rounds -- a search "
-        "well over 10 times bigger. This isn't just a theoretical concern: running this "
-        "project's own search directly on OhioT1DM, the exact dataset the paper's own "
-        "(3.29, 2.38) reference weights came from, never found anything close to those "
-        "numbers -- every single patient came back under 2.3. A search this much smaller "
-        "consistently settles for gentler corrections. That's a specific, checkable result, "
-        "not just a hunch."
+        "**1. The search for each patient's own settings is much smaller here than in the "
+        "paper.** This is the theory with actual evidence behind it, not just a guess. "
+        "Finding a patient's own personalized settings works like trying a handful of "
+        "different options, keeping whichever works best for that person, then repeating "
+        "that a few times to refine it further. This project only tries 6 options at a "
+        "time, repeated 6 times (21 tries total per patient). The original paper tries 20 "
+        "options at a time, repeated 25 times -- over 10 times more searching. Here's the "
+        "evidence: this project's own search was run directly on the exact dataset "
+        "(OhioT1DM) that the paper's own published settings came from, and it never landed "
+        "anywhere close to those numbers -- every patient came back with a much gentler "
+        "setting. A smaller search consistently settling for weaker adjustments is a real, "
+        "checkable pattern, not just a hunch."
     ),
     md(
-        "**2. The paper leaves out some model details, and the guesses made here might "
-        "not match theirs.** Things like exactly how far back the model looks, the exact "
-        "size of its internal layers, the learning rate, and how long it trains aren't "
-        "fully specified in the paper. This project picked settings that land close to the "
-        "paper's own reported model sizes, but a differently-shaped model might handle the "
-        "same trade-off differently. A smaller model in particular has less room to get "
-        "good at both things (normal-range accuracy and danger-zone accuracy) at once, "
-        "which could make the trade-off look worse here than it really needs to."
+        "**2. The paper doesn't say exactly how the model was built, and the guesses made "
+        "here might not match theirs.** Things like how far back in time the model looks, "
+        "how big it is on the inside, and how long it spends training aren't fully spelled "
+        "out in the paper -- this project had to make reasonable guesses for all of that. "
+        "A model built even slightly differently might handle this same trade-off "
+        "differently. A smaller model in particular has less room to be good at two things "
+        "at once (everyday accuracy and danger-zone accuracy), which could make the "
+        "trade-off look worse here than it needs to."
     ),
     md(
-        "**3. How the best version of each model gets picked during training might "
-        "differ.** While training, this project always keeps whichever version did best "
-        "on plain accuracy (not the danger-weighted score), even for the danger-weighted "
-        "models -- a deliberate choice, since the danger-weighted score is noisy on the "
-        "small amount of data held back per patient. If the paper instead kept whichever "
-        "version scored best on the danger-weighted measure itself, that would naturally "
-        "favor danger-zone accuracy more than this project's approach does."
+        "**3. Which version of the model gets kept, while it's training, might be decided "
+        "differently.** A model improves gradually while it trains, and at some point "
+        "training stops and one version gets kept as \"the model.\" This project always "
+        "keeps whichever version was doing best on everyday accuracy, even for the "
+        "versions meant to prioritize danger zones -- done on purpose, since the "
+        "danger-zone score is unreliable when checked against such a small slice of each "
+        "patient's data. If the paper instead kept whichever version scored best on the "
+        "danger-zone measure itself, that would naturally make their danger-weighted "
+        "results look stronger than this project's."
     ),
     md(
-        "**4. Smaller, harder-to-check possibilities (least confident).** The paper "
-        "describes some things in words rather than exact formulas (what exactly counts "
-        "as a dangerous \"event,\" for instance), so this project's specific interpretation "
-        "might not exactly match theirs. There could also be small differences in the data "
-        "itself, or the paper's reported numbers could reflect their best run out of "
-        "several rather than a single attempt -- there's no way to check this from the "
-        "paper alone."
+        "**4. A few smaller, harder-to-check possibilities.** These are the least certain. "
+        "The paper describes some things in plain words rather than an exact rule (what "
+        "exactly counts as a \"dangerous moment,\" for instance), so this project's own "
+        "interpretation might not exactly match theirs. There could also be small "
+        "differences in the data itself, or the paper's published numbers might reflect "
+        "their single best attempt out of several tries rather than one plain run -- "
+        "there's no way to tell either way just from reading the paper."
     ),
 ]))
 
