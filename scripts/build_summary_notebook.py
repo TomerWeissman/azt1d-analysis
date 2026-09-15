@@ -664,6 +664,53 @@ sections.append((6, "How does this compare to the original GLIMMER paper", [
         "model** on either dataset -- the opposite direction. That gap, not any of the "
         "internal comparisons above, is the real headline finding of this replication."
     ),
+    md("### Why the gap? A few theories"),
+    md(
+        "None of these are proven. They're ranked below from most to least confident, "
+        "based on how much actual evidence backs each one up, not just how plausible it "
+        "sounds."
+    ),
+    md(
+        "**1. The personalized search here is much smaller than the paper's (most "
+        "confident -- this one has real evidence behind it, not just a guess).** Finding "
+        "each patient's own weights means trying out many candidate settings and keeping "
+        "the best one. This project tries 6 candidates at a time across 6 rounds (21 tries "
+        "total per patient). The paper tries 20 candidates across 25 rounds -- a search "
+        "well over 10 times bigger. This isn't just a theoretical concern: running this "
+        "project's own search directly on OhioT1DM, the exact dataset the paper's own "
+        "(3.29, 2.38) reference weights came from, never found anything close to those "
+        "numbers -- every single patient came back under 2.3. A search this much smaller "
+        "consistently settles for gentler corrections. That's a specific, checkable result, "
+        "not just a hunch."
+    ),
+    md(
+        "**2. The paper leaves out some model details, and the guesses made here might "
+        "not match theirs.** Things like exactly how far back the model looks, the exact "
+        "size of its internal layers, the learning rate, and how long it trains aren't "
+        "fully specified in the paper. This project picked settings that land close to the "
+        "paper's own reported model sizes, but a differently-shaped model might handle the "
+        "same trade-off differently. A smaller model in particular has less room to get "
+        "good at both things (normal-range accuracy and danger-zone accuracy) at once, "
+        "which could make the trade-off look worse here than it really needs to."
+    ),
+    md(
+        "**3. How the best version of each model gets picked during training might "
+        "differ.** While training, this project always keeps whichever version did best "
+        "on plain accuracy (not the danger-weighted score), even for the danger-weighted "
+        "models -- a deliberate choice, since the danger-weighted score is noisy on the "
+        "small amount of data held back per patient. If the paper instead kept whichever "
+        "version scored best on the danger-weighted measure itself, that would naturally "
+        "favor danger-zone accuracy more than this project's approach does."
+    ),
+    md(
+        "**4. Smaller, harder-to-check possibilities (least confident).** The paper "
+        "describes some things in words rather than exact formulas (what exactly counts "
+        "as a dangerous \"event,\" for instance), so this project's specific interpretation "
+        "might not exactly match theirs. There could also be small differences in the data "
+        "itself, or the paper's reported numbers could reflect their best run out of "
+        "several rather than a single attempt -- there's no way to check this from the "
+        "paper alone."
+    ),
 ]))
 
 sections.append((7, "Bottom line", [
@@ -675,11 +722,10 @@ sections.append((7, "Bottom line", [
         "patient, instead of using one fixed setting, recovers some but not all of the "
         "accuracy that fixed weighting gives up, consistently across both model designs "
         "and both real-world datasets tested. What it doesn't do, on either dataset, is "
-        "beat the paper's own reported improvement over its baseline.\n\n"
-        "The gap between this project's numbers and the original paper's is most likely "
-        "the size of the genetic algorithm search used here (deliberately scoped down for "
-        "compute reasons, see `azt1d/glimmer/ga.py`) -- a larger search budget is the one "
-        "concrete next step if this needs to go further."
+        "beat the paper's own reported improvement over its baseline -- the theories for "
+        "that gap are laid out in the section above, with a bigger personalized-weight "
+        "search (see `azt1d/glimmer/ga.py`) the most concrete next step if this needs to "
+        "go further."
     ),
 ]))
 
