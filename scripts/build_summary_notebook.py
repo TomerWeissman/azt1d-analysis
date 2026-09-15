@@ -302,32 +302,19 @@ region_fig = grouped_bar(
 )
 region_chart_html = fig_html(region_fig)
 
-# 3. Clinical: event detection P/R/F1, AZT1D CNN-LSTM, all 3 approaches
-event_data = {"Precision": [], "Recall": [], "F1": []}
+# 3. Clinical: event detection P/R/F1, AZT1D CNN-LSTM, all 3 approaches --
+# a table reads more precisely than a chart for 3 metrics x 3 approaches.
+event_rows = []
 for label in APPROACHES:
     y_true, y_pred = pooled(az_lstm[label])
     m = dysglycemia_event_metrics(y_true, y_pred)
-    event_data["Precision"].append(m["precision"])
-    event_data["Recall"].append(m["recall"])
-    event_data["F1"].append(m["f1"])
-fig, ax = plt.subplots(figsize=(7.5, 4.5))
-metrics_order = ["Precision", "Recall", "F1"]
-x = np.arange(len(metrics_order))
-width = 0.8 / len(APPROACHES)
-for i, label in enumerate(APPROACHES):
-    vals = [event_data[m][i] for m in metrics_order]
-    offset = (i - 1) * width
-    bars = ax.bar(x + offset, vals, width, label=label, color=APPROACH_COLOR[label])
-    for b, v in zip(bars, vals):
-        ax.annotate(f"{v:.2f}", (b.get_x() + b.get_width() / 2, v), ha="center", va="bottom", fontsize=8)
-ax.set_xticks(x)
-ax.set_xticklabels(metrics_order)
-ax.set_ylim(0, 1.0)
-ax.set_ylabel("Score")
-ax.set_title("Detecting real dysglycemic moments -- AZT1D, CNN-LSTM")
-ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.0, 1.0))
-fig.tight_layout()
-event_chart_html = fig_html(fig)
+    event_rows.append({
+        "Training approach": label,
+        "Precision": f"{m['precision']:.2f}",
+        "Recall": f"{m['recall']:.2f}",
+        "F1": f"{m['f1']:.2f}",
+    })
+event_table_html = table_html(pd.DataFrame(event_rows).set_index("Training approach"))
 
 # 4. Clinical: Clarke Error Grid zones, AZT1D CNN-LSTM, all 3 approaches
 zone_data = {}
@@ -516,15 +503,48 @@ sections.append((None, None, [
         "seen."
     ),
     md(
-        "**Three ways of training that model get compared throughout this part:**\n\n"
-        "- **Standard** -- trained the ordinary way, to be right on average across every "
-        "prediction equally. No special attention to dangerous glucose zones.\n"
-        "- **Fixed danger-weighted** -- errors during dangerous zones (very high or very "
-        "low glucose) are counted as more costly than errors in the normal range, using "
-        "one weighting setting applied to every patient the same way.\n"
-        "- **Personalized danger-weighted** -- the same idea, except each patient gets "
-        "their own weighting instead of one shared setting, found by trying many candidate "
-        "settings per patient and keeping whichever works best for them.\n\n"
+        "**Three ways of training that model get compared throughout this part.** All "
+        "three use the same architecture, same data, same features -- the only thing that "
+        "changes is what the model gets penalized for getting wrong while it trains."
+    ),
+    md(
+        "**Standard.** The model is scored by one plain average error across every "
+        "prediction, treating a mistake at 90 mg/dL exactly the same as a mistake at 40 "
+        "mg/dL or 250 mg/dL. Nothing tells it that some mistakes are more dangerous than "
+        "others."
+    ),
+    md(
+        "**Fixed danger-weighted.** Every prediction error is first sorted into one of "
+        "three zones based on what the *true* glucose value actually was: hypo (below 70 "
+        "mg/dL), normal (70-180), or hyper (above 180). The error is averaged within each "
+        "zone separately, and then the three zone-averages are combined using different "
+        "weights instead of one flat average: a mistake during a hypo moment counts 3.29x "
+        "as much as a mistake during a normal moment, and a mistake during a hyper moment "
+        "counts 2.38x as much. Those specific numbers are the paper's own published "
+        "weights, applied here as one fixed setting for every patient. Mechanically, this "
+        "changes what the model is optimizing for: since it's now scored mostly on how it "
+        "does in the hypo/hyper zones, it has an incentive to spend its (limited) capacity "
+        "getting those zones right, even if that means drifting slightly on the normal "
+        "zone, which now counts for less. That's the direct cause of the trade-off in the "
+        "chart below -- it's not a side effect, it's the model doing exactly what it was "
+        "told to prioritize."
+    ),
+    md(
+        "**Personalized danger-weighted.** Same mechanism as fixed danger-weighted, "
+        "except the (3.29, 2.38)-style weight pair isn't shared across everyone -- each "
+        "patient gets their own pair, found by a search that tries many candidate weight "
+        "settings for that one patient and keeps whichever performs best on their own "
+        "held-out validation data. The premise is that one fixed setting is a compromise: "
+        "it's tuned to whatever the *average* patient needs, which may be too aggressive "
+        "for someone whose glucose is already fairly stable, or not aggressive enough for "
+        "someone who swings wildly. In practice, most patients' individually-found weights "
+        "come out gentler than the fixed (3.29, 2.38) setting, with a couple of patients "
+        "needing something much stronger -- which is exactly why personalized training "
+        "lands *between* standard and fixed danger-weighted in the results below, rather "
+        "than matching either one: most patients are being pushed less hard than the fixed "
+        "setting pushes them, while the few who need a strong correction still get one."
+    ),
+    md(
         "All three appear together in every comparison below, so what changes is only "
         "which of these three trained the model, never the data or the architecture."
     ),
@@ -555,7 +575,7 @@ sections.append((None, "Comparing all three approaches", [
         "not all of it. A real trade-off, not a straightforward win."
     ),
     md("**Does that trade-off matter clinically?** Two more direct checks:"),
-    md(event_chart_html),
+    md(event_table_html),
     md(
         "Danger-weighting pushes recall (catching real dangerous moments) up substantially, "
         "at the cost of precision (more false alarms) -- fixed weighting more so, "
@@ -563,10 +583,23 @@ sections.append((None, "Comparing all three approaches", [
     ),
     md(
         "The Clarke Error Grid is the standard clinical-accuracy tool for glucose "
-        "predictions, grading every prediction into one of five zones by how much the "
-        "error would actually matter: **zone A** is clinically accurate, **zone D** means "
-        "a real dangerous moment got predicted as safe -- the worst kind of miss for a "
-        "warning system -- and **zone E** is the worst case in the other direction."
+        "predictions. Instead of just measuring how far off a prediction was in mg/dL, it "
+        "grades every (actual, predicted) pair into one of five zones by what a person "
+        "would actually do differently because of the error:\n\n"
+        "- **Zone A -- clinically accurate.** The prediction is close enough (within 20% "
+        "of the true value, or both actual and predicted agree it's a hypo) that it "
+        "wouldn't change what someone does.\n"
+        "- **Zone B -- benign error.** Off by more than zone A, but still not enough to "
+        "lead to an inappropriate action -- an imprecise reading, not a harmful one.\n"
+        "- **Zone C -- overcorrection risk.** The prediction is wrong in a way that could "
+        "prompt treating a glucose level that didn't actually need it (e.g. predicting a "
+        "high when the true value was normal, prompting an unneeded correction dose).\n"
+        "- **Zone D -- dangerous miss.** A real dangerous moment (truly low or truly high) "
+        "gets predicted as normal, so no action gets taken when one was actually needed. "
+        "The worst kind of miss for a warning system, since it fails silently.\n"
+        "- **Zone E -- opposite-direction error.** The prediction and the true value are "
+        "on opposite extremes (predicted low when actually high, or vice versa) -- the "
+        "single worst case, since it could prompt exactly the wrong action."
     ),
     md(zone_chart_html),
     md(
