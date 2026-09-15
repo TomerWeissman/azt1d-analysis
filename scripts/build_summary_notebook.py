@@ -66,17 +66,6 @@ def load_results(run_name):
     return {sid: ckpt.load_result(d, sid) for sid in ids}
 
 
-def load_ga_weights(run_name):
-    d = CKPT_DIR / run_name
-    ids = sorted(int(p.stem.split("_")[1]) for p in d.glob("subject_*.json"))
-    out = {}
-    for sid in ids:
-        r = ckpt.load_ga_result(d, sid)
-        if r:
-            out[sid] = r["best_weights"]
-    return out
-
-
 def pooled(results):
     y_true = np.concatenate([r.y_test for r in results.values()])
     y_pred = np.concatenate([r.y_pred for r in results.values()])
@@ -353,29 +342,6 @@ zone_fig = grouped_bar(
 )
 zone_chart_html = fig_html(zone_fig)
 
-# 5. GA weight scatter, AZT1D CNN-LSTM. Only the genuine outliers get a
-# subject-id label -- labeling all 25 makes the tightly-clustered majority
-# unreadable and buries the one point that actually matters.
-ga_weights = load_ga_weights("ga_cnn_lstm")
-fig, ax = plt.subplots(figsize=(6.5, 6))
-xs = [w["w_hypo"] for w in ga_weights.values()]
-ys = [w["w_hyper"] for w in ga_weights.values()]
-ax.scatter(xs, ys, color=C[2], s=40)
-for sid, w in ga_weights.items():
-    if w["w_hypo"] > 3.0 or w["w_hyper"] > 3.0:
-        ax.annotate(f"patient {sid}", (w["w_hypo"], w["w_hyper"]), fontsize=9,
-                     color=plotting.INK_PRIMARY, xytext=(6, 4), textcoords="offset points")
-paper_w = ref.GLIMMER_PAPER_WEIGHTS["cnn_lstm"]
-ax.axvline(paper_w["w_hypo"], linestyle="--", color=plotting.BASELINE, linewidth=1)
-ax.axhline(paper_w["w_hyper"], linestyle="--", color=plotting.BASELINE, linewidth=1)
-ax.annotate("paper's fixed\naverage weight", (paper_w["w_hypo"], paper_w["w_hyper"]),
-            fontsize=8, color=plotting.INK_MUTED, xytext=(6, -14), textcoords="offset points")
-ax.set_xlabel("How much this patient's model weights hypo errors")
-ax.set_ylabel("How much this patient's model weights hyper errors")
-ax.set_title("Personalized weights found per patient -- AZT1D, CNN-LSTM")
-fig.tight_layout()
-ga_scatter_html = fig_html(fig)
-
 # 6. Full comparison: RMSE by approach x architecture, AZT1D and OhioT1DM
 def full_comparison(lstm_runs, tf_runs, title):
     series = {}
@@ -403,6 +369,28 @@ def full_comparison_table(lstm_runs, tf_runs):
 
 az_full_table = full_comparison_table(az_lstm, az_tf)
 oh_full_table = full_comparison_table(oh_lstm, oh_tf)
+
+# 7. Comparison against the paper's own reported numbers (CNN-LSTM only --
+# the paper doesn't report a directly comparable Transformer+GLIMMER number
+# for AZT1D). Paper numbers are hardcoded here since they come from the
+# paper itself, not from anything computed in this project.
+PAPER_NUMBERS = {
+    "AZT1D": {"baseline": (29.55, 6.49), "glimmer": (22.48, 3.57)},
+    "OhioT1DM": {"baseline": (31.98, 4.15), "glimmer": (23.97, 3.77)},
+}
+_rows = []
+for dataset, runs in [("AZT1D", az_lstm), ("OhioT1DM", oh_lstm)]:
+    p = PAPER_NUMBERS[dataset]
+    std_m, std_s = mean_std(runs["Standard"], "rmse")
+    pers_m, pers_s = mean_std(runs["Personalized danger-weighted"], "rmse")
+    _rows.append({
+        "Dataset": dataset,
+        "Paper's baseline": f"{p['baseline'][0]:.2f} +/- {p['baseline'][1]:.2f}",
+        "Paper's GLIMMER (best)": f"{p['glimmer'][0]:.2f} +/- {p['glimmer'][1]:.2f}",
+        "This project, standard": f"{std_m:.2f} +/- {std_s:.2f}",
+        "This project, personalized (best)": f"{pers_m:.2f} +/- {pers_s:.2f}",
+    })
+paper_comparison_table = table_html(pd.DataFrame(_rows).set_index("Dataset"), index=True)
 
 print("Charts built.")
 
@@ -528,58 +516,50 @@ sections.append((None, None, [
         "seen."
     ),
     md(
-        "**The three training approaches compared throughout this part, defined up front "
-        "since every chart below compares all three side by side:**\n\n"
+        "**Three ways of training that model get compared throughout this part:**\n\n"
         "- **Standard** -- trained the ordinary way, to be right on average across every "
-        "prediction equally.\n"
-        "- **Fixed danger-weighted** -- trained to care more about errors during dangerous "
-        "glucose zones (very high or very low), using one weighting setting applied to "
-        "every patient the same way.\n"
-        "- **Personalized danger-weighted** -- the same idea as fixed danger-weighted, "
-        "except each patient gets their own individually-searched weighting instead of "
-        "one shared setting.\n\n"
-        "Approach 1 below introduces Standard alone. Approaches 2 and 3 each introduce one "
-        "of the danger-weighted approaches in more depth, but their charts show all three "
-        "together for direct comparison."
+        "prediction equally. No special attention to dangerous glucose zones.\n"
+        "- **Fixed danger-weighted** -- errors during dangerous zones (very high or very "
+        "low glucose) are counted as more costly than errors in the normal range, using "
+        "one weighting setting applied to every patient the same way.\n"
+        "- **Personalized danger-weighted** -- the same idea, except each patient gets "
+        "their own weighting instead of one shared setting, found by trying many candidate "
+        "settings per patient and keeping whichever works best for them.\n\n"
+        "All three appear together in every comparison below, so what changes is only "
+        "which of these three trained the model, never the data or the architecture."
     ),
 ]))
 
-sections.append((None, "Approach 1: Standard training", [
+sections.append((None, "A first look: what does an ordinary model get wrong", [
     md(
-        "An ordinary model, trained to be right on average, with no special attention to "
-        "dangerous glucose zones."
+        "Before comparing all three, here's what the **standard** model alone does on one "
+        "patient's held-out data, to see the actual problem the other two approaches are "
+        "trying to fix."
     ),
     md(forecast_chart),
     md(
-        "**The problem this motivates:** the prediction tracks the real value well in the "
-        "middle of the range, but lags and undershoots right at the sharp highs and lows -- "
-        "exactly the moments that matter most clinically. That gap is what the next two "
-        "training approaches try to close."
+        "The prediction tracks the real value well in the middle of the range, but lags "
+        "and undershoots right at the sharp highs and lows -- exactly the moments that "
+        "matter most clinically. That gap is what danger-weighted training, fixed or "
+        "personalized, is meant to close."
     ),
 ]))
 
-sections.append((None, "Approach 2: Fixed danger-weighted training", [
-    md(
-        "Same model, same data -- the only change is what it's trained to prioritize. "
-        "Every prediction error gets sorted into one of three zones based on the true "
-        "glucose value (hypo, normal, hyper), and errors in the hypo and hyper zones are "
-        "counted as more costly than errors in the normal zone, using one fixed setting "
-        "applied to every patient equally."
-    ),
+sections.append((None, "Comparing all three approaches", [
     md(region_chart_html),
     md(
-        "This is the actual mechanism: error in the hypo and hyper zones goes down, "
-        "exactly as intended, but error in the normal zone goes up enough that the "
-        "model's overall accuracy (averaged across everything) ends up worse than the "
-        "standard model's. A real trade-off, not a straightforward win."
+        "This is the actual mechanism: danger-weighting (fixed or personalized) brings "
+        "hypo and hyper error down, exactly as intended, but normal-zone error goes up "
+        "enough that overall accuracy (averaged across everything) ends up worse than "
+        "standard's. Personalizing the weights per patient recovers some of that loss but "
+        "not all of it. A real trade-off, not a straightforward win."
     ),
     md("**Does that trade-off matter clinically?** Two more direct checks:"),
     md(event_chart_html),
     md(
-        "Fixed danger-weighting pushes recall (catching real dangerous moments) up "
-        "substantially, at the cost of precision (more false alarms). Personalized "
-        "weighting lands in between the two, closer to standard -- a smaller version of "
-        "the same trade-off, not a different one."
+        "Danger-weighting pushes recall (catching real dangerous moments) up substantially, "
+        "at the cost of precision (more false alarms) -- fixed weighting more so, "
+        "personalized a smaller version of the same trade."
     ),
     md(
         "The Clarke Error Grid is the standard clinical-accuracy tool for glucose "
@@ -590,48 +570,26 @@ sections.append((None, "Approach 2: Fixed danger-weighted training", [
     ),
     md(zone_chart_html),
     md(
-        "Zone D drops meaningfully with danger-weighted training -- fewer of the misses "
-        "that would actually matter, even though zone A (plain accuracy) drops too."
-    ),
-]))
-
-sections.append((None, "Approach 3: Personalized danger-weighted training", [
-    md(
-        "The fixed weighting above applies one setting to every patient. This approach "
-        "instead searches for each patient's own best weights individually, using a "
-        "genetic algorithm: many candidate weight settings are tried per patient, the "
-        "best-performing ones are combined and mutated, and this repeats until it "
-        "converges on that patient's own best setting."
-    ),
-    md(
-        "**Why this matters before looking at results:** if one fixed weighting setting "
-        "genuinely fit everyone equally well, personalizing it wouldn't be expected to "
-        "change much. The chart below checks that assumption directly, by plotting the "
-        "actual weights each patient's individual search landed on."
-    ),
-    md(ga_scatter_html),
-    md(
-        "It's not a good assumption: most patients cluster near mild corrections, but a "
-        "couple of patients (labeled above) needed much stronger ones -- **patient 9** "
-        "needed the strongest correction on both fronts, **patient 13** needed a strong "
-        "hypo-specific correction with almost no hyper adjustment. The fixed setting (the "
-        "dashed lines, from the paper) doesn't match either the typical patient or these "
-        "outliers particularly well. That spread is exactly why personalization has room "
-        "to help -- one setting for everyone is a compromise, and compromises fit some "
-        "people much better than others."
+        "Zone D drops meaningfully with danger-weighted training, fixed or personalized -- "
+        "fewer of the misses that would actually matter, even though zone A (plain "
+        "accuracy) drops too."
     ),
 ]))
 
 sections.append((5, "Does this hold up across architectures and datasets", [
     md(
         "Everything above used one architecture (CNN-LSTM) on one dataset (AZT1D), to "
-        "explain the idea clearly with one running example. That's not enough on its own "
-        "to trust the result -- it could just be something specific to that one model "
-        "design or that one group of patients. So the same three training approaches get "
-        "repeated here on a second architecture (CNN-Transformer) and a second, "
-        "independent dataset (OhioT1DM), and the charts below check whether the same "
-        "up-then-partially-down pattern (standard best, fixed danger-weighted worst, "
-        "personalized in between) shows up again."
+        "explain the idea with one running example. On its own, that's not enough to "
+        "trust the result -- it could be specific to that one model design or that one "
+        "group of patients. So here's the same check, repeated on a second architecture "
+        "(CNN-Transformer) and a second, independent dataset (OhioT1DM)."
+    ),
+    md(
+        "**What to look for in both charts below:** the same order every time -- standard "
+        "most accurate, fixed danger-weighted least accurate, personalized in between, "
+        "closer to standard. If that order holds on a different model design and a "
+        "different real-world dataset, that's strong evidence it's a real pattern, not a "
+        "coincidence of one setup."
     ),
     md("**AZT1D** -- both architectures, all three approaches:"),
     md(az_full_chart),
@@ -640,22 +598,42 @@ sections.append((5, "Does this hold up across architectures and datasets", [
     md(oh_full_chart),
     md(oh_full_table),
     md(
-        "The pattern holds on both architectures and both datasets: standard training is "
-        "the most accurate on average, fixed danger-weighting is the least accurate, and "
-        "personalized weighting recovers some but not all of that gap. Four independent "
-        "tests (2 architectures x 2 datasets) landing on the same pattern is good evidence "
-        "this is real and not specific to one model or one dataset.\n\n"
-        "Two things worth flagging: the (3.29, 2.38) fixed weights used above actually came "
-        "from a genetic algorithm search on OhioT1DM specifically (the paper's own choice, "
-        "not this project's). Running the same personalized search on OhioT1DM directly "
-        "-- the most direct check available -- found consistently gentler weights than "
-        "that reference value, not stronger ones. And on OhioT1DM specifically, the fixed "
-        "weighting actually beat personalized tuning in the hypo zone, the one place the "
-        "two datasets disagreed."
+        "The order holds in all four cases (2 architectures x 2 datasets): standard is "
+        "always most accurate, fixed danger-weighted always least accurate, personalized "
+        "always in between. That's good evidence this is a real, general pattern rather "
+        "than something specific to one model or one dataset.\n\n"
+        "Two things worth flagging: the (3.29, 2.38) fixed weights used throughout "
+        "actually came from a genetic algorithm search on OhioT1DM specifically (the "
+        "paper's own choice, not this project's). Running the same personalized search on "
+        "OhioT1DM directly -- the most direct check available -- found consistently "
+        "gentler weights than that reference value, not stronger ones. And on OhioT1DM "
+        "specifically, the fixed weighting actually beat personalized tuning in the hypo "
+        "zone, the one place the two datasets disagreed."
     ),
 ]))
 
-sections.append((6, "Bottom line", [
+sections.append((6, "How does this compare to the original GLIMMER paper", [
+    md(
+        "Everything so far compares this project's own approaches against each other. "
+        "The table below is the more important comparison: how do this project's numbers "
+        "stack up against what the paper itself reported? (CNN-LSTM only -- the paper "
+        "doesn't report a directly comparable Transformer number.)"
+    ),
+    md(paper_comparison_table),
+    md(
+        "Two things to take from this table. First, **this project's standard model is a "
+        "reasonable replication of the paper's own baseline** -- close on both datasets, "
+        "not off by some large, suspicious margin, which is a basic sanity check that this "
+        "implementation is doing roughly the right thing before trusting anything built on "
+        "top of it. Second, and more important: **the paper's GLIMMER (their best "
+        "danger-weighted result) beats their own baseline** on both datasets, while **this "
+        "project's personalized danger-weighted result does not beat its own standard "
+        "model** on either dataset -- the opposite direction. That gap, not any of the "
+        "internal comparisons above, is the real headline finding of this replication."
+    ),
+]))
+
+sections.append((7, "Bottom line", [
     md(
         "Danger-weighted training is a real trade, not a free win: it makes the model "
         "less accurate on average but more likely to catch the moments that actually "
@@ -663,11 +641,12 @@ sections.append((6, "Bottom line", [
         "fewer dangerous misses on the Clarke Error Grid. Personalizing those weights per "
         "patient, instead of using one fixed setting, recovers some but not all of the "
         "accuracy that fixed weighting gives up, consistently across both model designs "
-        "and both real-world datasets tested.\n\n"
-        "The gap between this project's numbers and the original paper's reported numbers "
-        "is most likely the size of the genetic algorithm search used here (deliberately "
-        "scoped down for compute reasons, see `azt1d/glimmer/ga.py`) -- a larger search "
-        "budget is the one concrete next step if this needs to go further."
+        "and both real-world datasets tested. What it doesn't do, on either dataset, is "
+        "beat the paper's own reported improvement over its baseline.\n\n"
+        "The gap between this project's numbers and the original paper's is most likely "
+        "the size of the genetic algorithm search used here (deliberately scoped down for "
+        "compute reasons, see `azt1d/glimmer/ga.py`) -- a larger search budget is the one "
+        "concrete next step if this needs to go further."
     ),
 ]))
 
