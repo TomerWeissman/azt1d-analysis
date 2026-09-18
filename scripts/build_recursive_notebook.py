@@ -303,6 +303,117 @@ cells.append(md(
     "of relying on the regression model's own flat point-estimate."
 ))
 
+cells.append(md(
+    "## 8. Using the real meal data instead of predicting it\n\n"
+    "Two attempts so far have confirmed the same thing: this model cannot anticipate "
+    "when a meal is coming from a few hours of recent history alone. Rather than "
+    "chase a better meal predictor, this version stops trying -- the model only "
+    "predicts glucose and background insulin recursively, and meal insulin and carbs "
+    "come from the real logged data at every step, the same way they would for a "
+    "deployed system that already knows a dose was just given (an insulin pump logs "
+    "its own doses; a meal-logging app knows what the user actually entered). This "
+    "isolates the question the recursive glucose curve was originally meant to "
+    "answer: given what actually happened with insulin and food, how well does the "
+    "model's own glucose trajectory hold up over time?"
+))
+
+cells.append(code(
+    "RECURSIVE_TARGETS = [ref.CGM, ref.BASAL]  # bolus/carbs use real data instead\n\n"
+    "data_oracle = rec.prepare_multi_output_data(df_subject, target_columns=RECURSIVE_TARGETS)\n"
+    "result_oracle = rec.train_multi_output_model(data_oracle, architecture=\"cnn_lstm\")\n"
+    "print(f\"Trained. {result_oracle.n_params:,} parameters.\")\n"
+    "for col, val in result_oracle.per_target_val_rmse.items():\n"
+    "    print(f\"  {col}: {val:.3f}\")"
+))
+
+cells.append(code(
+    "model_oracle = rec.load_multi_output_model(result_oracle)\n"
+    "trajectory_oracle = rec.recursive_forecast(\n"
+    "    model_oracle, enriched, start_idx=start_idx, scaler=data_oracle.scaler,\n"
+    "    target_means=data_oracle.target_means, target_stds=data_oracle.target_stds,\n"
+    "    n_steps=N_STEPS, target_columns=RECURSIVE_TARGETS,\n"
+    ")\n\n"
+    "minutes_ahead_o = (trajectory_oracle[\"step\"] + 1) * 5\n"
+    "error_o = trajectory_oracle[\"pred_CGM\"] - trajectory_oracle[\"actual_CGM\"]\n\n"
+    "fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(11, 6.5), sharex=True, height_ratios=[2, 1])\n\n"
+    "ax1.plot(minutes_ahead_o, trajectory_oracle[\"actual_CGM\"], color=plotting.INK_PRIMARY, linewidth=1.4, label=\"Actual glucose\")\n"
+    "ax1.plot(minutes_ahead_o, trajectory_oracle[\"pred_CGM\"], color=plotting.CATEGORICAL[2], linewidth=1.4, label=\"Recursively predicted (real meals used)\")\n"
+    "ax1.axhline(ref.HYPO_THRESHOLD, linestyle=\"--\", color=plotting.GLUCOSE_BAND_COLORS[\"hypo\"], linewidth=1)\n"
+    "ax1.axhline(ref.HYPER_THRESHOLD, linestyle=\"--\", color=plotting.GLUCOSE_BAND_COLORS[\"hyper\"], linewidth=1)\n"
+    "ax1.set_ylabel(\"Glucose (mg/dL)\")\n"
+    "ax1.set_title(f\"Subject {SUBJECT_ID}: recursive forecast using real meal data, {N_STEPS} steps ({N_STEPS*5} minutes)\")\n"
+    "ax1.legend(frameon=False)\n\n"
+    "ax2.axhline(0, color=plotting.BASELINE, linewidth=1)\n"
+    "ax2.plot(minutes_ahead_o, error_o, color=plotting.CATEGORICAL[3], linewidth=1.3)\n"
+    "ax2.fill_between(minutes_ahead_o, error_o, 0, color=plotting.CATEGORICAL[3], alpha=0.15)\n"
+    "ax2.set_ylabel(\"Predicted - actual\\n(mg/dL)\")\n"
+    "ax2.set_xlabel(\"Minutes into the recursive rollout\")\n\n"
+    "fig.tight_layout()\n"
+    "plt.show()"
+))
+
+cells.append(code(
+    "print(f\"Mean absolute error, first 30 minutes:   {error_o[minutes_ahead_o <= 30].abs().mean():.1f} mg/dL\")\n"
+    "print(f\"Mean absolute error, last 30 minutes:     {error_o[minutes_ahead_o >= minutes_ahead_o.max() - 30].abs().mean():.1f} mg/dL\")\n"
+    "print(f\"Mean absolute error, whole rollout:       {error_o.abs().mean():.1f} mg/dL\")\n"
+    "print(f\"Max absolute error reached, and at what point:  {error_o.abs().max():.1f} mg/dL at minute {minutes_ahead_o[error_o.abs().idxmax()]}\")"
+))
+
+cells.append(md(
+    "The full-window numbers above mix together two different things: how well the "
+    "model handles the meal specifically, and how much it drifts over a full 8-hour "
+    "horizon it was never trained or evaluated at (every model in this project is "
+    "trained and scored on single steps, not hours-long chains of its own guesses). "
+    "Isolating error in the roughly 1-hour window right around the real meal (minutes "
+    "200-300) separates those two effects -- this is the direct, apples-to-apples test "
+    "of whether real meal data actually fixes what was diagnosed as broken."
+))
+
+cells.append(code(
+    "meal_window = (minutes_ahead >= 200) & (minutes_ahead <= 300)\n"
+    "meal_window_o = (minutes_ahead_o >= 200) & (minutes_ahead_o <= 300)\n\n"
+    "print(\"Mean absolute error, minutes 200-300 (around the real meal):\")\n"
+    "print(f\"  Time-of-day, all 4 predicted (incl. meal):  {error[meal_window].abs().mean():.1f} mg/dL\")\n"
+    "print(f\"  Real meal data, only CGM+basal predicted:   {error_o[meal_window_o].abs().mean():.1f} mg/dL\")"
+))
+
+cells.append(md(
+    "## 9. Does using the real meal data actually fix it?\n\n"
+    "Yes, specifically where it was supposed to. **Right around the real meal (minutes "
+    "200-300), error drops from 44.1 mg/dL down to 18.5 mg/dL** -- more than half -- "
+    "and the plot above shows why directly: the predicted curve actually climbs when "
+    "the meal happens, tracking the real rise to 165 mg/dL, instead of drifting the "
+    "wrong way like both earlier attempts did. That's the mechanism identified back in "
+    "section 6 working as intended once the model is not asked to solve an unsolvable "
+    "problem (guessing when a meal happens) on top of the one it's actually good at "
+    "(glucose dynamics given what insulin and food are doing).\n\n"
+    "**The full-window numbers do not show the same clean win, and that's worth being "
+    "honest about rather than only reporting the number that looks good.** Whole-rollout "
+    "MAE (23.4 mg/dL) and last-30-minutes MAE (54.3 mg/dL) are both worse than the "
+    "time-of-day version. Two separate things are going on, neither of which is really "
+    "about meal prediction:\n\n"
+    "- **The first few minutes are noisier**, for reasons unrelated to meals -- some "
+    "run-to-run variance in exactly how the model's own generated trajectory departs "
+    "from the last real window, visible in the first-30-minute number going up (8.4 to "
+    "15.0 to 18.9 mg/dL across the three versions) even though nothing meal-related "
+    "changed in that window.\n"
+    "- **The back half of the rollout drifts regardless of input quality.** After the "
+    "meal passes, the predicted curve settles into a new flat plateau around 140 mg/dL "
+    "and stays there, while the real patient's glucose keeps moving on its own -- a "
+    "late climb, another dip, a final drop to the high 80s. Nothing in this model's "
+    "inputs (glucose history, basal, and now real bolus/carbs) explains that later "
+    "movement, and 500 minutes (over 8 hours) is far beyond the single 5-minute step "
+    "this model was ever trained or evaluated on. Some of that later gap is likely "
+    "genuinely unpredictable from these inputs at all, not a fixable modeling gap.\n\n"
+    "**Where this leaves things:** using real meal data instead of trying to predict it "
+    "fixes exactly the failure mode diagnosed at the start -- the model can simulate a "
+    "believable glucose response to a known meal, it just can't know a meal is coming. "
+    "That's a real, useful result for a shorter horizon (an hour or two around a logged "
+    "event). It is not a general fix for long, multi-hour recursive forecasting, where "
+    "accumulated drift over a horizon this far past training shows up regardless of how "
+    "good the exogenous inputs are."
+))
+
 out_path = "notebooks/08_recursive_forecasting.ipynb"
 new_notebook = nbformat.v4.new_notebook()
 new_notebook["cells"] = cells

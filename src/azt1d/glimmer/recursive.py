@@ -82,19 +82,21 @@ class MultiOutputData:
     X_train: np.ndarray
     X_val: np.ndarray
     X_test: np.ndarray
-    Y_train: np.ndarray  # raw units, shape (n, 4)
+    Y_train: np.ndarray  # raw units, shape (n, len(target_columns))
     Y_val: np.ndarray
     Y_test: np.ndarray
-    scaler: StandardScaler  # fit on X_train's 6 raw features
-    target_means: np.ndarray  # shape (4,), one per TARGET_COLUMNS entry
+    scaler: StandardScaler  # fit on X_train's raw features
+    target_means: np.ndarray  # shape (len(target_columns),)
     target_stds: np.ndarray
     n_features: int
+    target_columns: list[str]  # whatever was actually passed to prepare_multi_output_data
 
 
 @dataclass
 class MultiOutputResult:
     subject_id: int
     architecture: str
+    target_columns: list[str]
     val_rmse: float  # combined, z-scored space -- the model-selection criterion
     per_target_val_rmse: dict[str, float] = field(default_factory=dict)  # raw units, diagnostic
     history: list[tuple[float, float]] = field(default_factory=list)  # (train_loss, val_loss), z-scored MSE
@@ -128,7 +130,7 @@ def prepare_multi_output_data(
         X_train=X_train, X_val=X_val, X_test=X_test,
         Y_train=Y_train, Y_val=Y_val, Y_test=Y_test,
         scaler=scaler, target_means=target_means, target_stds=target_stds,
-        n_features=n_features,
+        n_features=n_features, target_columns=list(target_columns),
     )
 
 
@@ -151,7 +153,7 @@ def train_multi_output_model(
     Y_val_z = (data.Y_val - means) / stds
 
     model_class = MODEL_CLASSES[architecture]
-    model = model_class(n_features=data.n_features, n_outputs=len(TARGET_COLUMNS)).to(device)
+    model = model_class(n_features=data.n_features, n_outputs=len(data.target_columns)).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     loss_fn = nn.MSELoss()
 
@@ -196,13 +198,14 @@ def train_multi_output_model(
         val_pred_z = model(X_val_t).cpu().numpy()
     per_target_val_rmse = {
         col: float(np.sqrt(np.mean((val_pred_z[:, j] - Y_val_z[:, j]) ** 2)) * stds[j])
-        for j, col in enumerate(TARGET_COLUMNS)
+        for j, col in enumerate(data.target_columns)
     }
 
     cpu_state = {k: v.cpu() for k, v in best_state.items()}
     return MultiOutputResult(
         subject_id=data.subject_id,
         architecture=architecture,
+        target_columns=data.target_columns,
         val_rmse=best_val,
         per_target_val_rmse=per_target_val_rmse,
         history=history,
@@ -214,7 +217,7 @@ def train_multi_output_model(
 
 def load_multi_output_model(result: MultiOutputResult, device: torch.device | None = None) -> nn.Module:
     model_class = MODEL_CLASSES[result.architecture]
-    model = model_class(n_features=result.n_features, n_outputs=len(TARGET_COLUMNS))
+    model = model_class(n_features=result.n_features, n_outputs=len(result.target_columns))
     model.load_state_dict(result.model_state_dict)
     model.eval()
     if device is not None:
@@ -242,21 +245,27 @@ def recursive_forecast(
     step with both the predicted and the real actual values, for direct
     comparison.
 
-    Time-of-day features are the one exception to "recursively generated":
-    every future step's timestamp is exactly known in advance (it's just
-    the clock, not something that needs forecasting), so they're filled in
-    directly from df_subject rather than produced by the model.
+    Any of the 8 model input columns NOT in target_columns is treated as
+    known/given rather than recursively generated, and filled in directly
+    from df_subject's real values -- this covers both the two always-known
+    derived columns (moving average, region label -- recomputed from the
+    running CGM history rather than looked up) and the two clock columns
+    (time-of-day, genuinely known in advance either way), and also lets a
+    caller pass target_columns=[CGM, Basal] to use real logged meal
+    insulin/carbs instead of the model's own (unreliable) guess for them.
     """
     device = device or torch.device("cpu")
     model = model.to(device).eval()
 
     n_steps = min(n_steps, len(df_subject) - start_idx)
     feature_columns = RECURSIVE_FEATURE_COLUMNS
+    derived_columns = {feat.MA_COLUMN, feat.REGION_COLUMN, TIME_SIN_COLUMN, TIME_COS_COLUMN}
+    known_columns = [c for c in feature_columns if c not in target_columns and c not in derived_columns]
 
     cgm_history = list(df_subject[ref.CGM].to_numpy()[:start_idx])
     window_df = df_subject.iloc[start_idx - lookback : start_idx][feature_columns].copy()
-    future_time_features = df_subject.iloc[start_idx : start_idx + n_steps][
-        [TIME_SIN_COLUMN, TIME_COS_COLUMN]
+    future_known = df_subject.iloc[start_idx : start_idx + n_steps][
+        [TIME_SIN_COLUMN, TIME_COS_COLUMN] + known_columns
     ].reset_index(drop=True)
 
     rows = []
@@ -277,8 +286,7 @@ def recursive_forecast(
             **pred_dict,
             feat.MA_COLUMN: ma200,
             feat.REGION_COLUMN: region,
-            TIME_SIN_COLUMN: future_time_features.loc[step, TIME_SIN_COLUMN],
-            TIME_COS_COLUMN: future_time_features.loc[step, TIME_COS_COLUMN],
+            **{c: future_known.loc[step, c] for c in [TIME_SIN_COLUMN, TIME_COS_COLUMN] + known_columns},
         }
         window_df = pd.concat(
             [window_df.iloc[1:], pd.DataFrame([[new_row[c] for c in feature_columns]], columns=feature_columns)],
@@ -290,6 +298,10 @@ def recursive_forecast(
     result = pd.DataFrame(rows)
     actual_slice = df_subject.iloc[start_idx : start_idx + n_steps].reset_index(drop=True)
     for c in target_columns:
+        result[f"actual_{c}"] = actual_slice[c].to_numpy()
+    for c in known_columns:
+        # not predicted, but exposed too -- e.g. real bolus/carbs, for reference in plots
+        # even when they're a known input rather than a modeled target.
         result[f"actual_{c}"] = actual_slice[c].to_numpy()
     if ref.EVENT_DATETIME in actual_slice.columns:
         result[ref.EVENT_DATETIME] = actual_slice[ref.EVENT_DATETIME].to_numpy()
