@@ -87,6 +87,17 @@ cells.append(code(
     "print(f\"Subject {SUBJECT_ID}: {len(df_subject):,} readings.\")"
 ))
 
+cells.append(md(
+    "**Update after a first pass:** an earlier version of this notebook (no time-of-day "
+    "feature) found the recursive glucose curve flatlining almost immediately, because the "
+    "model had no way to know a meal might be coming and just predicted \"probably nothing\" "
+    "for meal insulin and carbs the whole way through. Two extra input features are added "
+    "below to give it that signal: sin/cos of time-of-day (meals cluster around particular "
+    "times, already visible earlier in this project's own data exploration). Unlike glucose, "
+    "insulin, and carbs, time doesn't need to be predicted during the rollout at all -- the "
+    "clock is exactly known in advance -- so it's filled in directly rather than generated."
+))
+
 cells.append(md("## 2. Train the multi-output, next-step model"))
 
 cells.append(code(
@@ -137,7 +148,7 @@ cells.append(md(
 
 cells.append(code(
     "model = rec.load_multi_output_model(result)\n"
-    "enriched = feat.add_engineered_features(df_subject)\n\n"
+    "enriched = rec.add_all_features(df_subject)\n\n"
     "N_STEPS = 100  # ~8.3 hours of 5-minute steps\n"
     "n_train_val_windows = len(data.X_train) + len(data.X_val)\n"
     "start_idx = n_train_val_windows + seq.LOOKBACK  # first row of the held-out test region\n\n"
@@ -210,7 +221,8 @@ cells.append(code(
 ))
 
 cells.append(md(
-    "## 6. What this shows\n\n"
+    "## 6. What the first version showed (no time-of-day feature)\n\n"
+    "*Kept here for comparison against the result below with time-of-day added.*\n\n"
     "The single-step model itself is genuinely good: 10.2 mg/dL RMSE predicting glucose "
     "one 5-minute step ahead, against a 38.0 mg/dL baseline for just guessing the average. "
     "That part works.\n\n"
@@ -248,6 +260,47 @@ cells.append(md(
     "model, most likely one that treats meals and doses as events to detect or plan around "
     "rather than a continuous quantity to regress on, not just a bigger or better-tuned "
     "version of this one."
+))
+
+cells.append(md(
+    "## 7. Does adding time-of-day actually help?\n\n"
+    "Short answer: it changes the model's behavior, but it does not fix the actual "
+    "problem, and on this specific window it is arguably worse.\n\n"
+    "**The core diagnosis is unchanged.** Meal insulin and carbs are still no better "
+    "predicted than just guessing their own mean (-0.005 and +0.007 respectively -- "
+    "both still effectively zero), against a real improvement of 27.5 mg/dL for glucose "
+    "and 0.64 for background insulin. The predicted meal insulin and carb trajectories "
+    "in the plot above still stay flat near zero straight through the real meal at "
+    "minute 230. Knowing the time of day does not tell the model *this specific patient "
+    "is about to eat right now* -- it is a weak population-level signal, not the kind of "
+    "specific trigger a regression model can act on for a single 5-minute-ahead "
+    "prediction.\n\n"
+    "**What time-of-day did change is background insulin**, whose validation RMSE "
+    "improved from 0.32 to 0.30 mg/dL and whose predicted trajectory now drifts and "
+    "curves over time instead of sitting at a flat constant, loosely tracking the "
+    "general shape (though not the sharp step-changes) of the real basal rate. That "
+    "shift is what reshaped the glucose curve too: instead of flatlining at one level, "
+    "the recursive prediction now follows a slower drifting curve, dipping down through "
+    "the middle of the rollout and climbing back up near the end.\n\n"
+    "**That drift happens to line up with reality better at the very end of this "
+    "500-minute window, and clearly worse in the middle.** Error in the last 30 minutes "
+    "dropped from 49.4 to 17.1 mg/dL, but error in the first 30 minutes roughly doubled "
+    "(8.4 to 15.0 mg/dL), and the peak error got both larger (53.4 to 75.4 mg/dL) and "
+    "earlier (minute 485 to minute 250). The predicted curve still completely misses the "
+    "actual meal-driven spike up to 165 mg/dL around minute 250, drifting down to about "
+    "80 while the real value climbs -- if anything, the gap during the part of the "
+    "rollout that matters most (right after the missed meal) got wider, not narrower. "
+    "The improved tail-end number looks like coincidental convergence for this "
+    "particular patient and window, not a fix to the underlying issue.\n\n"
+    "**Bottom line:** a cheap input feature was worth trying, and it did surface a real, "
+    "if secondary, improvement (background insulin tracks time-of-day structure now "
+    "instead of a flat constant). But the actual bottleneck identified in the first pass "
+    "-- the model has no way to anticipate a discrete meal event before it happens -- is "
+    "still there, confirmed by the same near-zero improvement over guessing the mean for "
+    "bolus and carbs. Closing that gap for real would need one of the heavier approaches "
+    "discussed earlier: treating meal/dose prediction as its own event-detection problem, "
+    "or simulating plausible meals from this patient's historical eating pattern instead "
+    "of relying on the regression model's own flat point-estimate."
 ))
 
 out_path = "notebooks/08_recursive_forecasting.ipynb"
