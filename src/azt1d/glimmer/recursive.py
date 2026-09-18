@@ -1,0 +1,249 @@
+"""
+Recursive (autoregressive) multi-step forecasting: an extension beyond every
+other model in this project, which all predict a single value 60 minutes
+ahead in one shot. Here a model predicts one 5-minute step ahead across all
+four loggable quantities (CGM, basal, bolus, carbs) at once, and its own
+predictions get fed back in as input to keep predicting further out --
+testing how a model's own errors compound over a longer horizon, not just
+its one-shot accuracy.
+
+The other two of the six model inputs (the CGM moving average and the
+hypo/normal/hyper region label) aren't modeled directly -- they're
+deterministic functions of the CGM history, so they get recomputed at each
+recursive step from the running actual+predicted CGM stream instead, the
+same way azt1d.glimmer.features.add_engineered_features computes them.
+
+Predicting bolus/carbs (not just CGM) was a deliberate choice, made after
+weighing the alternative (using real future values for everything except
+CGM) -- bolus and carbs are sparse, behavior-driven events, near-zero except
+at discrete meal/correction moments, so a plain regression model is likely
+to learn to predict them as close to zero most of the time. That's an
+expected result worth checking directly, not a reason to avoid modeling
+them.
+"""
+
+from __future__ import annotations
+
+import copy
+from dataclasses import dataclass, field
+
+import numpy as np
+import pandas as pd
+import torch
+from sklearn.preprocessing import StandardScaler
+from torch import nn
+
+from .. import reference as ref
+from . import features as feat
+from . import sequences as seq
+from .model import MODEL_CLASSES, count_parameters
+from .train import DEFAULT_BATCH_SIZE, DEFAULT_LR, DEFAULT_PATIENCE, _iter_batches, get_device
+
+DEFAULT_EPOCHS = 30
+TARGET_COLUMNS = [ref.CGM, ref.BASAL, ref.TOTAL_BOLUS_INSULIN_DELIVERED, ref.CARB_SIZE]
+
+
+@dataclass
+class MultiOutputData:
+    subject_id: int
+    X_train: np.ndarray
+    X_val: np.ndarray
+    X_test: np.ndarray
+    Y_train: np.ndarray  # raw units, shape (n, 4)
+    Y_val: np.ndarray
+    Y_test: np.ndarray
+    scaler: StandardScaler  # fit on X_train's 6 raw features
+    target_means: np.ndarray  # shape (4,), one per TARGET_COLUMNS entry
+    target_stds: np.ndarray
+    n_features: int
+
+
+@dataclass
+class MultiOutputResult:
+    subject_id: int
+    architecture: str
+    val_rmse: float  # combined, z-scored space -- the model-selection criterion
+    per_target_val_rmse: dict[str, float] = field(default_factory=dict)  # raw units, diagnostic
+    history: list[tuple[float, float]] = field(default_factory=list)  # (train_loss, val_loss), z-scored MSE
+    n_params: int = 0
+    n_features: int = 0
+    model_state_dict: dict = field(default_factory=dict)
+
+
+def prepare_multi_output_data(
+    df_subject: pd.DataFrame, lookback: int = seq.LOOKBACK, target_columns: list[str] = TARGET_COLUMNS
+) -> MultiOutputData:
+    enriched = feat.add_engineered_features(df_subject)
+    X, Y = seq.make_multi_output_windows(enriched, feat.FEATURE_COLUMNS, target_columns, lookback, horizon=1)
+    splits_X = seq.chronological_split(X, Y)  # reuses the generic (X, y) splitter; Y here just has 4 columns
+
+    n_features = X.shape[-1]
+    scaler = StandardScaler().fit(splits_X["X_train"].reshape(-1, n_features))
+
+    def scale(arr: np.ndarray) -> np.ndarray:
+        return scaler.transform(arr.reshape(-1, n_features)).reshape(arr.shape).astype(np.float32)
+
+    X_train, X_val, X_test = (scale(splits_X[k]) for k in ("X_train", "X_val", "X_test"))
+    Y_train, Y_val, Y_test = splits_X["y_train"], splits_X["y_val"], splits_X["y_test"]
+
+    target_means = Y_train.mean(axis=0)
+    target_stds = Y_train.std(axis=0)
+    target_stds[target_stds == 0] = 1.0  # guard against a constant column (shouldn't happen here, but be safe)
+
+    return MultiOutputData(
+        subject_id=int(df_subject["subject_id"].iloc[0]),
+        X_train=X_train, X_val=X_val, X_test=X_test,
+        Y_train=Y_train, Y_val=Y_val, Y_test=Y_test,
+        scaler=scaler, target_means=target_means, target_stds=target_stds,
+        n_features=n_features,
+    )
+
+
+def train_multi_output_model(
+    data: MultiOutputData,
+    architecture: str = "cnn_lstm",
+    epochs: int = DEFAULT_EPOCHS,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    lr: float = DEFAULT_LR,
+    patience: int = DEFAULT_PATIENCE,
+    device: torch.device | None = None,
+    seed: int = 0,
+) -> MultiOutputResult:
+    device = device or get_device()
+    torch.manual_seed(seed)
+    rng = np.random.default_rng(seed)
+
+    means, stds = data.target_means, data.target_stds
+    Y_train_z = (data.Y_train - means) / stds
+    Y_val_z = (data.Y_val - means) / stds
+
+    model_class = MODEL_CLASSES[architecture]
+    model = model_class(n_features=data.n_features, n_outputs=len(TARGET_COLUMNS)).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.MSELoss()
+
+    X_val_t = torch.from_numpy(data.X_val).to(device)
+    y_val_t = torch.from_numpy(Y_val_z.astype(np.float32)).to(device)
+
+    best_val = float("inf")
+    best_state = copy.deepcopy(model.state_dict())
+    stale_epochs = 0
+    history: list[tuple[float, float]] = []
+
+    for _ in range(epochs):
+        model.train()
+        train_losses = []
+        for xb, yb in _iter_batches(data.X_train, Y_train_z.astype(np.float32), batch_size, shuffle=True, rng=rng):
+            optimizer.zero_grad()
+            pred = model(torch.from_numpy(xb).to(device))
+            loss = loss_fn(pred, torch.from_numpy(yb).to(device))
+            loss.backward()
+            optimizer.step()
+            train_losses.append(loss.item())
+
+        model.eval()
+        with torch.no_grad():
+            val_pred_z = model(X_val_t)
+            val_loss = loss_fn(val_pred_z, y_val_t).item()
+            val_rmse_z = torch.sqrt(torch.mean((val_pred_z - y_val_t) ** 2)).item()
+        history.append((float(np.mean(train_losses)), val_loss))
+
+        if val_rmse_z < best_val:
+            best_val = val_rmse_z
+            best_state = copy.deepcopy(model.state_dict())
+            stale_epochs = 0
+        else:
+            stale_epochs += 1
+            if stale_epochs >= patience:
+                break
+
+    model.load_state_dict(best_state)
+    model.eval()
+    with torch.no_grad():
+        val_pred_z = model(X_val_t).cpu().numpy()
+    per_target_val_rmse = {
+        col: float(np.sqrt(np.mean((val_pred_z[:, j] - Y_val_z[:, j]) ** 2)) * stds[j])
+        for j, col in enumerate(TARGET_COLUMNS)
+    }
+
+    cpu_state = {k: v.cpu() for k, v in best_state.items()}
+    return MultiOutputResult(
+        subject_id=data.subject_id,
+        architecture=architecture,
+        val_rmse=best_val,
+        per_target_val_rmse=per_target_val_rmse,
+        history=history,
+        n_params=count_parameters(model),
+        n_features=data.n_features,
+        model_state_dict=cpu_state,
+    )
+
+
+def load_multi_output_model(result: MultiOutputResult, device: torch.device | None = None) -> nn.Module:
+    model_class = MODEL_CLASSES[result.architecture]
+    model = model_class(n_features=result.n_features, n_outputs=len(TARGET_COLUMNS))
+    model.load_state_dict(result.model_state_dict)
+    model.eval()
+    if device is not None:
+        model = model.to(device)
+    return model
+
+
+def recursive_forecast(
+    model: nn.Module,
+    df_subject: pd.DataFrame,
+    start_idx: int,
+    scaler: StandardScaler,
+    target_means: np.ndarray,
+    target_stds: np.ndarray,
+    n_steps: int,
+    lookback: int = seq.LOOKBACK,
+    target_columns: list[str] = TARGET_COLUMNS,
+    device: torch.device | None = None,
+) -> pd.DataFrame:
+    """
+    Roll the model forward n_steps (5-minute steps each) from df_subject's
+    row `start_idx`, feeding each step's own prediction back in as the next
+    step's input. df_subject must already carry the engineered features
+    (see azt1d.glimmer.features.add_engineered_features) and be sorted
+    chronologically. Returns one row per step with both the predicted and
+    the real actual values, for direct comparison.
+    """
+    device = device or torch.device("cpu")
+    model = model.to(device).eval()
+
+    n_steps = min(n_steps, len(df_subject) - start_idx)
+    feature_columns = feat.FEATURE_COLUMNS
+
+    cgm_history = list(df_subject[ref.CGM].to_numpy()[:start_idx])
+    window_df = df_subject.iloc[start_idx - lookback : start_idx][feature_columns].copy()
+
+    rows = []
+    for step in range(n_steps):
+        X = scaler.transform(window_df.to_numpy(dtype=np.float32)).astype(np.float32)
+        x_t = torch.from_numpy(X).unsqueeze(0).to(device)
+        with torch.no_grad():
+            pred_z = model(x_t).cpu().numpy().reshape(-1)
+        pred = pred_z * target_stds + target_means
+        pred_dict = dict(zip(target_columns, pred.tolist()))
+
+        pred_cgm = pred_dict[ref.CGM]
+        cgm_history.append(pred_cgm)
+        ma200 = float(np.mean(cgm_history[-feat.MA_WINDOW:]))
+        region = 0 if pred_cgm < ref.HYPO_THRESHOLD else (2 if pred_cgm > ref.HYPER_THRESHOLD else 1)
+
+        new_row = {**pred_dict, feat.MA_COLUMN: ma200, feat.REGION_COLUMN: region}
+        window_df = pd.concat(
+            [window_df.iloc[1:], pd.DataFrame([[new_row[c] for c in feature_columns]], columns=feature_columns)],
+            ignore_index=True,
+        )
+
+        rows.append({"step": step, **{f"pred_{c}": pred_dict[c] for c in target_columns}})
+
+    result = pd.DataFrame(rows)
+    actual_slice = df_subject.iloc[start_idx : start_idx + n_steps].reset_index(drop=True)
+    for c in target_columns:
+        result[f"actual_{c}"] = actual_slice[c].to_numpy()
+    if ref.EVENT_DATETIME in actual_slice.columns:
+        result[ref.EVENT_DATETIME] = actual_slice[ref.EVENT_DATETIME].to_numpy()
+    return result

@@ -44,6 +44,31 @@ def make_windows(
     return X, y
 
 
+def make_multi_output_windows(
+    df: pd.DataFrame,
+    feature_columns: list[str],
+    target_columns: list[str],
+    lookback: int = LOOKBACK,
+    horizon: int = 1,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Like make_windows, but Y has one column per entry in target_columns
+    instead of a single target -- for a model predicting several quantities
+    at once (e.g. every recursive-rollout input, not just CGM) rather than
+    one 60-minutes-ahead value.
+    """
+    features = df[feature_columns].to_numpy(dtype=np.float32)
+    targets = df[target_columns].to_numpy(dtype=np.float32)
+
+    n = len(df) - lookback - horizon + 1
+    if n <= 0:
+        raise ValueError(f"Not enough rows ({len(df)}) for lookback={lookback} + horizon={horizon}")
+
+    X = np.stack([features[i : i + lookback] for i in range(n)])
+    Y = targets[lookback + horizon - 1 : lookback + horizon - 1 + n]
+    return X, Y
+
+
 def chronological_split(
     X: np.ndarray, y: np.ndarray, test_size: float = 0.2, val_size: float = 0.2
 ) -> dict[str, np.ndarray]:

@@ -33,9 +33,16 @@ from torch import nn
 
 
 class CNNLSTM(nn.Module):
-    def __init__(self, n_features: int, conv_channels: tuple[int, int, int] = (16, 32, 16), lstm_hidden: int = 8):
+    def __init__(
+        self,
+        n_features: int,
+        conv_channels: tuple[int, int, int] = (16, 32, 16),
+        lstm_hidden: int = 8,
+        n_outputs: int = 1,
+    ):
         super().__init__()
         c1, c2, c3 = conv_channels
+        self.n_outputs = n_outputs
         self.conv = nn.Sequential(
             nn.Conv1d(n_features, c1, kernel_size=3, padding=1),
             nn.ReLU(),
@@ -45,7 +52,7 @@ class CNNLSTM(nn.Module):
             nn.ReLU(),
         )
         self.lstm = nn.LSTM(input_size=c3, hidden_size=lstm_hidden, batch_first=True)
-        self.head = nn.Linear(lstm_hidden, 1)
+        self.head = nn.Linear(lstm_hidden, n_outputs)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: (batch, lookback, n_features) -> conv wants (batch, n_features, lookback)
@@ -54,7 +61,8 @@ class CNNLSTM(nn.Module):
         x = x.transpose(1, 2)  # back to (batch, lookback, channels) for the LSTM
         _, (h_n, _) = self.lstm(x)
         last_hidden = h_n[-1]  # (batch, lstm_hidden)
-        return self.head(last_hidden).squeeze(-1)
+        out = self.head(last_hidden)  # (batch, n_outputs)
+        return out.squeeze(-1) if self.n_outputs == 1 else out
 
 
 class CNNTransformer(nn.Module):
@@ -65,9 +73,11 @@ class CNNTransformer(nn.Module):
         n_heads: int = 8,
         dim_feedforward: int = 256,
         dropout: float = 0.1,
+        n_outputs: int = 1,
     ):
         super().__init__()
         c1, c2, c3 = conv_channels
+        self.n_outputs = n_outputs
         self.conv = nn.Sequential(
             nn.Conv1d(n_features, c1, kernel_size=3, padding=1),
             nn.ReLU(),
@@ -83,7 +93,7 @@ class CNNTransformer(nn.Module):
             dropout=dropout,
             batch_first=True,
         )
-        self.head = nn.Linear(c3, 1)
+        self.head = nn.Linear(c3, n_outputs)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.transpose(1, 2)
@@ -91,7 +101,8 @@ class CNNTransformer(nn.Module):
         x = x.transpose(1, 2)  # (batch, lookback, c3) for the transformer block
         x = self.transformer(x)
         last_step = x[:, -1, :]  # analogous to CNNLSTM's final hidden state
-        return self.head(last_step).squeeze(-1)
+        out = self.head(last_step)  # (batch, n_outputs)
+        return out.squeeze(-1) if self.n_outputs == 1 else out
 
 
 MODEL_CLASSES = {"cnn_lstm": CNNLSTM, "cnn_transformer": CNNTransformer}
