@@ -114,6 +114,14 @@ plt.show()
 
 cells.append(md("## 3. Clarke Error Grid"))
 
+cells.append(md("""Each dot compares real glucose (x axis) with the predicted glucose (y axis). The zones say how harmful the error would be if someone acted on the prediction:
+
+- **A**: prediction within 20% of the real value (or both under 70). Clinically accurate.
+- **B**: off by more than 20%, but acting on it would still not cause harm.
+- **C**: off enough that acting on it would trigger an unneeded treatment.
+- **D**: a dangerous miss. Real glucose is clearly out of range (under about 58 or over 240) but the prediction says it is in range.
+- **E**: the prediction points the wrong way (a real low predicted as high, or a real high predicted as low). The worst error."""))
+
 cells.append(code('''
 grid_predictions = {}
 for name in MODELS:
@@ -175,6 +183,54 @@ cells.append(md("## 5. Clarke zones as the GARCH band grows: standard error weig
 cells.append(code('''
 trend_standard = plot_trend("Standard error weighted")
 trend_standard.round(2)
+'''))
+
+cells.append(md("## 6. Where the alarm fires"))
+
+cells.append(code('''
+TRIGGER_HALF_WINDOW = 144     # 24 hours in total, centered on this patient's lowest real glucose reading
+TARGET_FALSE_RATE = 0.35
+
+
+def plot_triggers(levels, suptitle):
+    """One panel per model. Ticks along the bottom mark the moments the alarm fires: upper row = correct
+    (real glucose in danger), lower row = false (real glucose safe)."""
+    center = int(np.argmin(actual))
+    a, b = max(0, center - TRIGGER_HALF_WINDOW), min(len(actual), center + TRIGGER_HALF_WINDOW)
+    x = time[a:b]
+    danger = (actual < ref.HYPO_THRESHOLD) | (actual > ref.HYPER_THRESHOLD)
+    fig, axes = plt.subplots(2, 1, figsize=(12, 6.8), sharex=True, sharey=True)
+    for ax, (name, (_, color)) in zip(axes, MODELS.items()):
+        lo, hi = engines[name].bands("GARCH", levels[name])
+        trig, _, _ = unc.trigger_flags(lo, hi)
+        rate = unc.trigger_metrics(actual, lo, hi)["false_trigger_rate"]
+        ax.fill_between(x, lo[a:b], hi[a:b], color=color, alpha=0.25, linewidth=0)
+        ax.plot(x, frames[name].pred[a:b], color=color, linewidth=1.2)
+        ax.plot(x, actual[a:b], color=plotting.INK_PRIMARY, linewidth=1.3)
+        ax.axhline(ref.HYPO_THRESHOLD, linestyle="--", color=plotting.GLUCOSE_BAND_COLORS["hypo"], linewidth=1)
+        ax.axhline(ref.HYPER_THRESHOLD, linestyle="--", color=plotting.GLUCOSE_BAND_COLORS["hyper"], linewidth=1)
+        ax.vlines(x[trig[a:b] & danger[a:b]], 60, 78, color=plotting.INK_PRIMARY, linewidth=1.2)
+        ax.vlines(x[trig[a:b] & ~danger[a:b]], 36, 54, color=plotting.INK_SECONDARY, linewidth=1.2, alpha=0.6)
+        ax.annotate("correct trigger", xy=(1.005, 69), xycoords=("axes fraction", "data"), fontsize=7, color=plotting.INK_SECONDARY, va="center", annotation_clip=False)
+        ax.annotate("false trigger", xy=(1.005, 45), xycoords=("axes fraction", "data"), fontsize=7, color=plotting.INK_SECONDARY, va="center", annotation_clip=False)
+        ax.set_ylim(30, 330)
+        ax.set_ylabel("Glucose (mg/dL)")
+        ax.set_title(f"{name}: GARCH {levels[name]:.0%} band ({rate:.0%} of this patient's safe readings falsely trigger)", loc="left", fontsize=10)
+    fig.suptitle(suptitle)
+    fig.tight_layout(rect=[0, 0, 0.93, 0.97])
+    plt.show()
+
+
+# Band size that gives this patient a 35% false trigger rate, found separately for each model
+matched_levels = {
+    name: unc.level_for_false_trigger_rate({SUBJECT_ID: engines[name]}, {SUBJECT_ID: actual}, "GARCH", TARGET_FALSE_RATE)
+    for name in MODELS
+}
+plot_triggers(matched_levels, f"Subject {SUBJECT_ID}: alarm at a {TARGET_FALSE_RATE:.0%} false trigger rate")
+'''))
+
+cells.append(code('''
+plot_triggers({name: GRID_LEVEL for name in MODELS}, f"Subject {SUBJECT_ID}: alarm with the {GRID_LEVEL:.0%} band used in the Clarke grids")
 '''))
 
 nb = new_notebook()
