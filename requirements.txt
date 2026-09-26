@@ -10,3 +10,4 @@ scikit-learn>=1.4
 torch>=2.14
 pyarrow>=25.0
 duckdb>=1.5
+arch>=8.0
