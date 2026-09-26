@@ -111,14 +111,6 @@ def conformal_halfwidth(cal_resid: np.ndarray, alpha: float) -> float:
     return float(np.sort(np.abs(cal_resid))[k - 1])
 
 
-def conformal_offsets(cal: Frame, test: Frame, levels: tuple[float, ...]) -> dict[float, tuple[np.ndarray, np.ndarray]]:
-    out = {}
-    for level in levels:
-        q = conformal_halfwidth(cal.resid, 1 - level)
-        out[level] = (np.full(len(test.pred), -q), np.full(len(test.pred), q))
-    return out
-
-
 # ---------------------------------------------------------------------------
 # GARCH
 # ---------------------------------------------------------------------------
@@ -165,17 +157,14 @@ def garch_h_step_variance(resid: np.ndarray, params: GarchParams, init_var: floa
     return out
 
 
-def garch_offsets(cal: Frame, test: Frame, levels: tuple[float, ...]):
+def garch_sigma(cal: Frame, test: Frame) -> tuple[GarchParams, np.ndarray]:
+    """GARCH fitted on calibration residuals, then filtered through the test period with the
+    60-minute lag. Returns the parameters and the 12-step-ahead sigma for each test window."""
     params = fit_garch(cal.resid)
     all_resid = np.concatenate([cal.resid, test.resid])
     init_var = float(np.var(cal.resid - params.mu))  # calibration data only
     var = garch_h_step_variance(all_resid, params, init_var, LAG)[len(cal.resid):]
-    sigma = np.sqrt(var)
-    out = {}
-    for level in levels:
-        z = stats.norm.ppf(0.5 + level / 2)
-        out[level] = (params.mu - z * sigma, params.mu + z * sigma)
-    return out, params, sigma
+    return params, np.sqrt(var)
 
 
 # ---------------------------------------------------------------------------
@@ -208,27 +197,35 @@ def select_analogs(dist_row: np.ndarray, k: int, min_gap: int, pool_cap: int) ->
     return np.array(chosen)
 
 
-def analog_offsets(
+def analog_residual_sets(
     cal: Frame,
     test: Frame,
-    levels: tuple[float, ...],
     k: int = 50,
     min_gap: int = LAG,
     tod_weight: float = 3.0,
     pool_cap: int = 600,
-):
+) -> np.ndarray:
+    """For every test window, the signed forecast errors of its k analogs, shape (n_test, k).
+    Rows are padded with nan if fewer than k spread-out analogs exist."""
     cal_f = _analog_features(cal, tod_weight)
     test_f = _analog_features(test, tod_weight)
     d2 = (test_f**2).sum(1)[:, None] + (cal_f**2).sum(1)[None, :] - 2 * test_f @ cal_f.T
-    lo = {lv: np.empty(len(test.pred)) for lv in levels}
-    hi = {lv: np.empty(len(test.pred)) for lv in levels}
+    sets = np.full((len(test.pred), k), np.nan)
     for j in range(len(test.pred)):
         sel = select_analogs(d2[j], k, min_gap, pool_cap)
-        r = cal.resid[sel]
-        for lv in levels:
-            a = 1 - lv
-            lo[lv][j], hi[lv][j] = np.quantile(r, [a / 2, 1 - a / 2])
-    return {lv: (lo[lv], hi[lv]) for lv in levels}
+        sets[j, : len(sel)] = cal.resid[sel]
+    return sets
+
+
+def row_quantile(sorted_rows: np.ndarray, counts: np.ndarray, q: float) -> np.ndarray:
+    """Linear-interpolated quantile q of each row of an ascending-sorted matrix whose
+    nan padding sits at the end, using only the first counts[i] entries of row i."""
+    pos = q * (counts - 1)
+    i0 = np.floor(pos).astype(int)
+    i1 = np.ceil(pos).astype(int)
+    rows = np.arange(len(sorted_rows))
+    frac = pos - i0
+    return sorted_rows[rows, i0] * (1 - frac) + sorted_rows[rows, i1] * frac
 
 
 # ---------------------------------------------------------------------------
@@ -238,20 +235,117 @@ def analog_offsets(
 METHODS = ("Conformal", "GARCH", "Analog Ensemble")
 
 
-def build_bands(cal: Frame, test: Frame, levels: tuple[float, ...] = (0.8, 0.95)):
-    """{method: {level: (lower, upper)}} as absolute glucose values, clipped to the sensor range."""
-    offsets = {
-        "Conformal": conformal_offsets(cal, test, levels),
-        "GARCH": garch_offsets(cal, test, levels)[0],
-        "Analog Ensemble": analog_offsets(cal, test, levels),
+class BandEngine:
+    """All three band methods for one subject, prepared once so a band of any size (any
+    coverage level) is cheap to produce. Everything is fitted on the calibration frame;
+    the test frame is only ever filtered through, never fitted on."""
+
+    def __init__(self, cal: Frame, test: Frame, k: int = 50, min_gap: int = LAG, tod_weight: float = 3.0):
+        self.pred = test.pred
+        self._abs_sorted = np.sort(np.abs(cal.resid))
+        self.garch_params, self.garch_sigma = garch_sigma(cal, test)
+        sets = analog_residual_sets(cal, test, k=k, min_gap=min_gap, tod_weight=tod_weight)
+        self._analog_sorted = np.sort(sets, axis=1)  # nan padding sorts to the end
+        self._analog_counts = np.isfinite(sets).sum(axis=1)
+
+    def offsets(self, method: str, level: float) -> tuple[np.ndarray, np.ndarray]:
+        """(lower, upper) offsets from the prediction, before clipping."""
+        n = len(self.pred)
+        alpha = 1 - level
+        if method == "Conformal":
+            m = len(self._abs_sorted)
+            rank = math.ceil((m + 1) * level)
+            q = float("inf") if rank > m else float(self._abs_sorted[rank - 1])
+            return np.full(n, -q), np.full(n, q)
+        if method == "GARCH":
+            z = stats.norm.ppf(0.5 + level / 2)
+            return self.garch_params.mu - z * self.garch_sigma, self.garch_params.mu + z * self.garch_sigma
+        if method == "Analog Ensemble":
+            lo = row_quantile(self._analog_sorted, self._analog_counts, alpha / 2)
+            hi = row_quantile(self._analog_sorted, self._analog_counts, 1 - alpha / 2)
+            return lo, hi
+        raise ValueError(method)
+
+    def bands(self, method: str, level: float) -> tuple[np.ndarray, np.ndarray]:
+        """(lower, upper) band as absolute glucose, clipped to the sensor range."""
+        lo, hi = self.offsets(method, level)
+        return np.clip(self.pred + lo, SENSOR_MIN, SENSOR_MAX), np.clip(self.pred + hi, SENSOR_MIN, SENSOR_MAX)
+
+
+# ---------------------------------------------------------------------------
+# The trigger rule: alarm when either band edge crosses into a danger zone
+# ---------------------------------------------------------------------------
+
+
+def trigger_flags(lo: np.ndarray, hi: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """(any trigger, low-edge trigger, high-edge trigger). For a point forecast pass it as
+    both lo and hi."""
+    low = lo < ref.HYPO_THRESHOLD
+    high = hi > ref.HYPER_THRESHOLD
+    return low | high, low, high
+
+
+def trigger_metrics(actual: np.ndarray, lo: np.ndarray, hi: np.ndarray) -> dict[str, float]:
+    """Alarm quality under the either-edge rule. Danger = real glucose under 70 or over 180;
+    a false trigger is an alarm while real glucose was safe (70 to 180)."""
+    trig, low, high = trigger_flags(lo, hi)
+    hypo = actual < ref.HYPO_THRESHOLD
+    hyper = actual > ref.HYPER_THRESHOLD
+    danger = hypo | hyper
+    safe = ~danger
+    return {
+        "false_trigger_rate": float(trig[safe].mean()),  # share of safe readings that falsely trigger
+        "danger_caught": float(trig[danger].mean()),
+        "lows_caught": float(trig[hypo].mean()) if hypo.any() else float("nan"),
+        "highs_caught": float(trig[hyper].mean()) if hyper.any() else float("nan"),
+        "share_of_alarms_false": float((trig & safe).sum() / max(trig.sum(), 1)),
+        "false_via_low_edge": float((low & safe).sum() / safe.sum()),
+        "false_via_high_edge": float((high & safe).sum() / safe.sum()),
+        "n_safe": int(safe.sum()),
+        "n_danger": int(danger.sum()),
     }
-    bands = {}
-    for method, per_level in offsets.items():
-        bands[method] = {
-            lv: (np.clip(test.pred + lo, SENSOR_MIN, SENSOR_MAX), np.clip(test.pred + hi, SENSOR_MIN, SENSOR_MAX))
-            for lv, (lo, hi) in per_level.items()
-        }
-    return bands
+
+
+def swapped_prediction(pred: np.ndarray, lo: np.ndarray, hi: np.ndarray) -> np.ndarray:
+    """What a trigger-following forecaster would report. If an edge crosses into a danger zone,
+    report that edge instead of the model's forecast. If both cross, report whichever
+    crosses its line by more. If neither crosses, keep the model's forecast."""
+    low_over = np.maximum(ref.HYPO_THRESHOLD - lo, 0.0)
+    high_over = np.maximum(hi - ref.HYPER_THRESHOLD, 0.0)
+    out = pred.copy()
+    use_low = (low_over > 0) & (low_over >= high_over)
+    use_high = (high_over > 0) & (high_over > low_over)
+    out[use_low] = lo[use_low]
+    out[use_high] = hi[use_high]
+    return out
+
+
+def level_for_false_trigger_rate(engines: dict, actuals: dict, method: str, target: float, iters: int = 30) -> float:
+    """Band level at which `method` falsely triggers on `target` of all safe readings, pooled
+    across subjects. Wider bands only ever trigger more, so a bisection is enough."""
+    def pooled_rate(level: float) -> float:
+        false = safe = 0
+        for sid, eng in engines.items():
+            lo, hi = eng.bands(method, level)
+            trig, _, _ = trigger_flags(lo, hi)
+            is_safe = (actuals[sid] >= ref.HYPO_THRESHOLD) & (actuals[sid] <= ref.HYPER_THRESHOLD)
+            false += int((trig & is_safe).sum())
+            safe += int(is_safe.sum())
+        return false / safe
+
+    lo_lv, hi_lv = 0.01, 0.999
+    for _ in range(iters):
+        mid = (lo_lv + hi_lv) / 2
+        if pooled_rate(mid) < target:
+            lo_lv = mid
+        else:
+            hi_lv = mid
+    return (lo_lv + hi_lv) / 2
+
+
+# ---------------------------------------------------------------------------
+# Coverage and Clarke helpers
+# ---------------------------------------------------------------------------
 
 
 def region_of(actual: np.ndarray) -> np.ndarray:
