@@ -46,6 +46,7 @@ from azt1d import hupa, plotting
 from azt1d import reference as ref
 from azt1d.glimmer import checkpoint as ckpt
 from azt1d.glimmer import uncertainty as unc
+from azt1d.glimmer.clinical import clarke_zone_percentages
 
 plotting.apply_style()
 
@@ -54,6 +55,7 @@ DAYS_PER_ROW = 10             # the test period is drawn as stacked rows of this
 STEPS_PER_DAY = 24 * 60 // ref.CGM_INTERVAL_MINUTES
 BAND_LEVELS = (0.90, 0.80, 0.55)          # widest first so the narrower ones draw on top
 BAND_ALPHA = {0.90: 0.14, 0.80: 0.26, 0.55: 0.42}
+TREND_LEVELS = np.round(np.arange(0.55, 0.9001, 0.05), 2)   # band sizes for the Clarke trend lines
 CKPT_ROOT = PROJECT_ROOT / "data" / "processed" / "checkpoints"
 MODELS = {
     "No error weighted": ("hupa_ucm_cnn_lstm_v0", plotting.CATEGORICAL[0]),
@@ -159,6 +161,46 @@ cells.append(md("## 4. GARCH error bands: standard error weighted"))
 
 cells.append(code('''
 strip_chart(band_drawer("Standard error weighted"), f"Patient {SUBJECT_ID}: GARCH bands, standard error weighted")
+'''))
+
+cells.append(md("## 5. Clarke zones as the GARCH band grows: no error weighted"))
+
+cells.append(code('''
+def zone_trend(name):
+    """Clarke zone percentages when the forecast is replaced by the band edge that crossed 70 or 180,
+    for each band size."""
+    rows = []
+    for level in TREND_LEVELS:
+        lo, hi = engines[name].bands("GARCH", float(level))
+        rows.append({"band": level, **clarke_zone_percentages(actual, unc.swapped_prediction(frames[name].pred, lo, hi))})
+    return pd.DataFrame(rows).set_index("band")
+
+
+def plot_trend(name):
+    trend = zone_trend(name)
+    base = clarke_zone_percentages(actual, frames[name].pred)
+    zone_color = dict(zip("ABCDE", plotting.CATEGORICAL[:5]))
+    fig, axes = plt.subplots(1, 2, figsize=(13, 4.4), sharex=True)
+    for ax, group, title in ((axes[0], "AB", "Zones A and B"), (axes[1], "CDE", "Zones C, D and E")):
+        for z in group:
+            ax.plot(trend.index * 100, trend[z], marker="o", markersize=4, color=zone_color[z], linewidth=1.8, label=f"Zone {z}")
+            ax.axhline(base[z], linestyle=":", color=zone_color[z], linewidth=1)
+        ax.set_title(title)
+        ax.set_xlabel("GARCH band size (coverage, %)")
+        ax.set_ylabel("% of predictions")
+        ax.legend(frameon=False, fontsize=8)
+    fig.suptitle(f"Patient {SUBJECT_ID}, {name}: dotted lines are the raw forecast with no band")
+    fig.tight_layout()
+    plt.show()
+
+
+plot_trend("No error weighted")
+'''))
+
+cells.append(md("## 6. Clarke zones as the GARCH band grows: standard error weighted"))
+
+cells.append(code('''
+plot_trend("Standard error weighted")
 '''))
 
 nb = new_notebook()
