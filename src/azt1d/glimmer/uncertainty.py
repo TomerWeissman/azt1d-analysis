@@ -240,13 +240,16 @@ class BandEngine:
     coverage level) is cheap to produce. Everything is fitted on the calibration frame;
     the test frame is only ever filtered through, never fitted on."""
 
-    def __init__(self, cal: Frame, test: Frame, k: int = 50, min_gap: int = LAG, tod_weight: float = 3.0):
+    def __init__(self, cal: Frame, test: Frame, k: int = 50, min_gap: int = LAG, tod_weight: float = 3.0,
+                 analogs: bool = True):
         self.pred = test.pred
         self._abs_sorted = np.sort(np.abs(cal.resid))
         self.garch_params, self.garch_sigma = garch_sigma(cal, test)
-        sets = analog_residual_sets(cal, test, k=k, min_gap=min_gap, tod_weight=tod_weight)
-        self._analog_sorted = np.sort(sets, axis=1)  # nan padding sorts to the end
-        self._analog_counts = np.isfinite(sets).sum(axis=1)
+        self._analog_sorted = None
+        if analogs:  # skip for very long records: the analog search builds an (n_test x n_cal) distance matrix
+            sets = analog_residual_sets(cal, test, k=k, min_gap=min_gap, tod_weight=tod_weight)
+            self._analog_sorted = np.sort(sets, axis=1)  # nan padding sorts to the end
+            self._analog_counts = np.isfinite(sets).sum(axis=1)
 
     def offsets(self, method: str, level: float) -> tuple[np.ndarray, np.ndarray]:
         """(lower, upper) offsets from the prediction, before clipping."""
@@ -261,6 +264,8 @@ class BandEngine:
             z = stats.norm.ppf(0.5 + level / 2)
             return self.garch_params.mu - z * self.garch_sigma, self.garch_params.mu + z * self.garch_sigma
         if method == "Analog Ensemble":
+            if self._analog_sorted is None:
+                raise ValueError("this BandEngine was built with analogs=False")
             lo = row_quantile(self._analog_sorted, self._analog_counts, alpha / 2)
             hi = row_quantile(self._analog_sorted, self._analog_counts, 1 - alpha / 2)
             return lo, hi
