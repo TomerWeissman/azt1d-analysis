@@ -1,13 +1,23 @@
 """
 Uncertainty bands around a trained point forecaster, without retraining it.
 
-Three methods borrowed from other fields, all built on the same saved
-checkpoint's 60-minute-ahead predictions:
+Six methods borrowed from other fields, all built on the same saved checkpoint's
+60-minute-ahead predictions:
 
-  - conformal: split conformal on absolute residuals (model-agnostic, constant width)
-  - garch: GARCH(1,1) on the residual series (finance; width follows recent volatility)
+  - conformal: split conformal on absolute residuals (statistics, model-agnostic,
+    constant width)
+  - garch: GARCH(1,1) on the residual series (finance; width follows recent volatility,
+    with a fitted mean-reversion speed)
   - analog: Analog Ensemble (weather; find past situations similar to now and reuse
     how wrong the model was then)
+  - ewma: exponentially weighted moving average volatility, the RiskMetrics model that
+    predates GARCH (finance; same idea as GARCH but with no mean reversion -- today's
+    variance is just yesterday's blended with the latest squared error)
+  - normalized conformal: split conformal on residuals divided by a local scale
+    estimate from nearby moments, so the band widens and narrows locally instead of
+    staying one fixed width (statistics; "locally weighted" conformal prediction)
+  - time-of-day quantiles: empirical residual quantiles binned by time of day, the
+    simplest thing weather forecasting calls a "climatology" baseline
 
 Everything is calibrated on the validation period only. Training residuals are
 optimistically small (the model was fit on them) and test data is never used to fit
@@ -111,6 +121,14 @@ def conformal_halfwidth(cal_resid: np.ndarray, alpha: float) -> float:
     return float(np.sort(np.abs(cal_resid))[k - 1])
 
 
+def _conformal_quantile(sorted_scores: np.ndarray, level: float) -> float:
+    """Same rank as conformal_halfwidth (rank = ceil((n+1) * level), since level = 1 - alpha), but
+    takes an already-sorted array so BandEngine does not re-sort it on every call."""
+    n = len(sorted_scores)
+    rank = math.ceil((n + 1) * level)
+    return float("inf") if rank > n else float(sorted_scores[rank - 1])
+
+
 # ---------------------------------------------------------------------------
 # GARCH
 # ---------------------------------------------------------------------------
@@ -163,6 +181,41 @@ def garch_sigma(cal: Frame, test: Frame) -> tuple[GarchParams, np.ndarray]:
     params = fit_garch(cal.resid)
     all_resid = np.concatenate([cal.resid, test.resid])
     init_var = float(np.var(cal.resid - params.mu))  # calibration data only
+    var = garch_h_step_variance(all_resid, params, init_var, LAG)[len(cal.resid):]
+    return params, np.sqrt(var)
+
+
+# ---------------------------------------------------------------------------
+# EWMA (RiskMetrics-style volatility, finance)
+# ---------------------------------------------------------------------------
+
+
+def fit_ewma(cal_resid: np.ndarray, candidates: tuple[float, ...] = (0.85, 0.90, 0.94, 0.97, 0.99)) -> GarchParams:
+    """RiskMetrics EWMA volatility, in use in finance since before GARCH: today's variance is
+    yesterday's variance blended with yesterday's squared error, with no long-run mean to revert
+    to. It is exactly IGARCH(1,1) with omega=0 and alpha+beta=1, so it reuses garch_h_step_variance
+    for the forecast recursion. mu is the calibration mean (the same bias correction GARCH gets from
+    its own fit); the blend factor lambda has no closed-form fit for EWMA, so it is chosen from a
+    small grid by one-step-ahead Gaussian log-likelihood on the calibration residuals."""
+    mu = float(np.mean(cal_resid))
+    e = cal_resid - mu
+    best_lambda, best_ll = candidates[0], -np.inf
+    for lam in candidates:
+        s2 = float(np.var(e))
+        ll = 0.0
+        for t in range(1, len(e)):
+            ll += -0.5 * (np.log(2 * np.pi * s2) + e[t] ** 2 / s2)
+            s2 = lam * s2 + (1 - lam) * e[t - 1] ** 2
+        if ll > best_ll:
+            best_ll, best_lambda = ll, lam
+    return GarchParams(mu=mu, omega=0.0, alpha=1 - best_lambda, beta=best_lambda)
+
+
+def ewma_sigma(cal: Frame, test: Frame) -> tuple[GarchParams, np.ndarray]:
+    """Same lag-respecting recursion as garch_sigma, with EWMA's fixed-persistence parameters."""
+    params = fit_ewma(cal.resid)
+    all_resid = np.concatenate([cal.resid, test.resid])
+    init_var = float(np.var(cal.resid - params.mu))
     var = garch_h_step_variance(all_resid, params, init_var, LAG)[len(cal.resid):]
     return params, np.sqrt(var)
 
@@ -229,10 +282,73 @@ def row_quantile(sorted_rows: np.ndarray, counts: np.ndarray, q: float) -> np.nd
 
 
 # ---------------------------------------------------------------------------
+# Normalized (locally weighted) Conformal -- statistics, conformal prediction literature
+# ---------------------------------------------------------------------------
+
+
+def local_scale(base: Frame, query: Frame, k: int, min_gap: int, tod_weight: float, pool_cap: int,
+                 exclude_self: bool) -> np.ndarray:
+    """A robust local spread of base's residuals around each row of query, from the k nearest base
+    windows (same distance features as the analog ensemble): the median absolute deviation of their
+    residuals, scaled to be a normal-consistent estimate of a standard deviation.
+
+    exclude_self=True is for calibrating on base against itself (leave-one-out): a row is never its
+    own neighbor. exclude_self=False is for scoring a separate query frame (the test period) against
+    base (calibration)."""
+    base_f = _analog_features(base, tod_weight)
+    query_f = _analog_features(query, tod_weight)
+    d2 = (query_f**2).sum(1)[:, None] + (base_f**2).sum(1)[None, :] - 2 * query_f @ base_f.T
+    out = np.full(len(query.pred), np.nan)
+    for j in range(len(query.pred)):
+        row = d2[j].copy()
+        if exclude_self:
+            row[j] = np.inf
+        sel = select_analogs(row, k, min_gap, pool_cap)
+        vals = base.resid[sel]
+        if len(vals) == 0:
+            continue
+        out[j] = 1.4826 * np.median(np.abs(vals - np.median(vals)))
+    return out
+
+
+def fit_normalized_conformal(cal: Frame, k: int, min_gap: int, tod_weight: float,
+                              pool_cap: int) -> tuple[np.ndarray, np.ndarray]:
+    """Locally weighted split conformal: the nonconformity score is each calibration residual
+    divided by the local scale around it, so residuals from an easy (low-volatility) moment and a
+    hard (high-volatility) moment are put on a common footing before the conformal quantile is
+    taken. A test point's band width is that quantile scaled back up by its own local scale, so the
+    band moves with local difficulty instead of staying one fixed width like plain conformal."""
+    cal_scale = local_scale(cal, cal, k, min_gap, tod_weight, pool_cap, exclude_self=True)
+    norm = np.abs(cal.resid) / np.maximum(cal_scale, 1.0)  # 1 mg/dL floor avoids dividing by ~0
+    return cal_scale, np.sort(norm)
+
+
+# ---------------------------------------------------------------------------
+# Time-of-day quantiles -- a "climatology" baseline, as weather forecasting calls it
+# ---------------------------------------------------------------------------
+
+
+def _tod_bin(times: np.ndarray, n_bins: int) -> np.ndarray:
+    edges = np.linspace(0, 1440, n_bins + 1)
+    return np.clip(np.digitize(_minute_of_day(times), edges[1:-1]), 0, n_bins - 1)
+
+
+def tod_quantile_bins(cal: Frame, test: Frame, n_bins: int) -> tuple[list[np.ndarray], np.ndarray]:
+    """Calibration residuals grouped by time-of-day bin (sorted, for quantile lookup), plus each
+    test window's bin. No distance computation at all -- the only thing conditioned on is the clock,
+    the simplest baseline weather forecasting has a name for."""
+    cal_bins = _tod_bin(cal.issue_time, n_bins)
+    bins = [np.sort(cal.resid[cal_bins == b]) for b in range(n_bins)]
+    return bins, _tod_bin(test.issue_time, n_bins)
+
+
+# ---------------------------------------------------------------------------
 # Bands, metrics, Clarke
 # ---------------------------------------------------------------------------
 
 METHODS = ("Conformal", "GARCH", "Analog Ensemble")
+EXTRA_METHODS = ("EWMA", "Normalized Conformal", "Time-of-day Quantiles")
+ALL_METHODS = METHODS + EXTRA_METHODS
 
 
 class BandEngine:
@@ -241,33 +357,51 @@ class BandEngine:
     the test frame is only ever filtered through, never fitted on."""
 
     def __init__(self, cal: Frame, test: Frame, k: int = 50, min_gap: int = LAG, tod_weight: float = 3.0,
-                 analogs: bool = True):
+                 analogs: bool = True, n_tod_bins: int = 8):
         self.pred = test.pred
         self._abs_sorted = np.sort(np.abs(cal.resid))
         self.garch_params, self.garch_sigma = garch_sigma(cal, test)
+        self.ewma_params, self.ewma_sigma = ewma_sigma(cal, test)
+        self._tod_bins, self._tod_test_bin = tod_quantile_bins(cal, test, n_tod_bins)
         self._analog_sorted = None
-        if analogs:  # skip for very long records: the analog search builds an (n_test x n_cal) distance matrix
+        self._norm_sorted = None
+        if analogs:  # skip for very long records: these build an (n_test x n_cal) or (n_cal x n_cal) distance matrix
             sets = analog_residual_sets(cal, test, k=k, min_gap=min_gap, tod_weight=tod_weight)
             self._analog_sorted = np.sort(sets, axis=1)  # nan padding sorts to the end
             self._analog_counts = np.isfinite(sets).sum(axis=1)
+            _, self._norm_sorted = fit_normalized_conformal(cal, k, min_gap, tod_weight, 600)
+            self._norm_test_scale = local_scale(cal, test, k, min_gap, tod_weight, 600, exclude_self=False)
 
     def offsets(self, method: str, level: float) -> tuple[np.ndarray, np.ndarray]:
         """(lower, upper) offsets from the prediction, before clipping."""
         n = len(self.pred)
         alpha = 1 - level
         if method == "Conformal":
-            m = len(self._abs_sorted)
-            rank = math.ceil((m + 1) * level)
-            q = float("inf") if rank > m else float(self._abs_sorted[rank - 1])
+            q = _conformal_quantile(self._abs_sorted, level)
             return np.full(n, -q), np.full(n, q)
         if method == "GARCH":
             z = stats.norm.ppf(0.5 + level / 2)
             return self.garch_params.mu - z * self.garch_sigma, self.garch_params.mu + z * self.garch_sigma
+        if method == "EWMA":
+            z = stats.norm.ppf(0.5 + level / 2)
+            return self.ewma_params.mu - z * self.ewma_sigma, self.ewma_params.mu + z * self.ewma_sigma
         if method == "Analog Ensemble":
             if self._analog_sorted is None:
                 raise ValueError("this BandEngine was built with analogs=False")
             lo = row_quantile(self._analog_sorted, self._analog_counts, alpha / 2)
             hi = row_quantile(self._analog_sorted, self._analog_counts, 1 - alpha / 2)
+            return lo, hi
+        if method == "Normalized Conformal":
+            if self._norm_sorted is None:
+                raise ValueError("this BandEngine was built with analogs=False")
+            q = _conformal_quantile(self._norm_sorted, level)
+            width = q * self._norm_test_scale
+            return -width, width
+        if method == "Time-of-day Quantiles":
+            lo = np.array([np.quantile(self._tod_bins[b], alpha / 2) if len(self._tod_bins[b]) else -np.inf
+                            for b in self._tod_test_bin])
+            hi = np.array([np.quantile(self._tod_bins[b], 1 - alpha / 2) if len(self._tod_bins[b]) else np.inf
+                            for b in self._tod_test_bin])
             return lo, hi
         raise ValueError(method)
 
