@@ -348,6 +348,33 @@ def level_for_false_trigger_rate(engines: dict, actuals: dict, method: str, targ
     return (lo_lv + hi_lv) / 2
 
 
+DEFAULT_AUC_LEVELS = np.round(np.concatenate([[0.001], np.arange(0.05, 0.951, 0.05), [0.99, 0.999]]), 3)
+
+
+def trigger_auc(engine: "BandEngine", actual: np.ndarray, method: str, levels: np.ndarray = DEFAULT_AUC_LEVELS) -> float:
+    """Area under the danger-caught vs. false-trigger-rate curve as the band grows from near zero to
+    near full width -- the same curve plotted in notebooks_2/01, but reduced to one number so models
+    can be ranked by it instead of by RMSE. It is a ROC-style AUC: false trigger rate stands in for a
+    false-positive rate (out of safe readings) and danger caught stands in for a true-positive rate
+    (out of dangerous readings), with band width playing the role of the threshold. 1.0 is impossible
+    to reach in practice; higher means a better trade-off between catching real danger and crying wolf.
+
+    Extended with (0, 0) at the low end and (1, 1) at the high end so the score is comparable across
+    models even though no achievable band level gives a false trigger rate of exactly 0 or 1. This
+    makes it an approximation, not an exact integral, when the curve is far from those anchors."""
+    xs, ys = [0.0], [0.0]
+    for level in levels:
+        lo, hi = engine.bands(method, float(level))
+        m = trigger_metrics(actual, lo, hi)
+        xs.append(m["false_trigger_rate"])
+        ys.append(m["danger_caught"])
+    xs.append(1.0)
+    ys.append(1.0)
+    xs_arr, ys_arr = np.array(xs), np.array(ys)
+    order = np.argsort(xs_arr, kind="stable")
+    return float(np.trapezoid(ys_arr[order], xs_arr[order]))
+
+
 # ---------------------------------------------------------------------------
 # Coverage and Clarke helpers
 # ---------------------------------------------------------------------------

@@ -25,7 +25,7 @@ import pandas as pd
 from . import cleaning
 from . import reference as ref
 
-DEFAULT_DIR = Path("data") / "raw" / "hupa_ucm" / "HUPA-UCM Diabetes Dataset" / "Preprocessed"
+DEFAULT_DIR = Path("data") / "hupa_ucm" / "HUPA-UCM Diabetes Dataset" / "Preprocessed"
 
 _BASAL_TO_RATE = 60 / ref.CGM_INTERVAL_MINUTES  # raw basal is per 5-minute row; canonical is per hour
 

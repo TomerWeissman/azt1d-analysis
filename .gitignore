@@ -4,9 +4,11 @@ __pycache__/
 venv/
 .env
 
-# Raw dataset is large (~776 MB zip) and not ours to redistribute
+# Raw datasets are large and not ours to redistribute
 data/raw/*
 !data/raw/.gitkeep
+data/hupa_ucm/*
+!data/hupa_ucm/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
 
