@@ -60,7 +60,7 @@ METHOD_LABELS = {
 df = loading.load_real_dataset(PROJECT_ROOT / "data" / "raw", PROJECT_ROOT / "data" / "processed")
 subject_ids = sorted(int(s) for s in df["subject_id"].unique())
 
-engines, actuals, max_gap = {}, {}, 0.0
+engines, actuals, frames, max_gap = {}, {}, {}, 0.0
 for sid in subject_ids:
     res = ckpt.load_result(CKPT_DIR, sid)
     df_subject = df[df["subject_id"] == sid].reset_index(drop=True)
@@ -68,33 +68,47 @@ for sid in subject_ids:
     max_gap = max(max_gap, unc.matches_stored_predictions(test, res))
     engines[sid] = unc.BandEngine(val, test)
     actuals[sid] = test.actual
+    frames[sid] = test
 
 assert max_gap < 0.05, "rebuilt predictions do not match the checkpoints"
 actual_all = np.concatenate([actuals[s] for s in subject_ids])
 print(f"Rebuilt forecasts and bands for {len(subject_ids)} patients, {len(actual_all):,} test predictions.")
 '''))
 
-cells.append(md("## The danger-caught vs. false-trigger curve, one line per method"))
+cells.append(md("## Band width vs. how wrong the forecast actually turned out to be"))
 
 cells.append(code('''
+# The alarm trade-off curve (danger caught vs. false triggers) turns out nearly identical for all
+# six methods -- expected, since it is driven mostly by the point forecast's own error distribution,
+# which every method shares. The real question a band answers is sharper: does its width actually
+# know, ahead of time, when the forecast is about to be badly wrong? All six bands are put on equal
+# footing first (each sized to a 35% pooled false trigger rate, same as notebooks_2/01), then every
+# test prediction is grouped by how large its eventual error turned out to be, and each method's
+# average band width is plotted against that. A flat line means the method hands out the same size
+# band whether the forecast is about to be right or badly wrong. A rising line means it saw it coming.
 def pooled_bands(method, level):
     los, his = zip(*(engines[s].bands(method, level) for s in subject_ids))
     return np.concatenate(los), np.concatenate(his)
 
 
-fig, ax = plt.subplots(figsize=(9, 7))
+abs_err_all = np.concatenate([np.abs(frames[s].resid) for s in subject_ids])
+N_BINS = 10
+bin_id = pd.qcut(abs_err_all, N_BINS, labels=False)
+bin_center = pd.Series(abs_err_all).groupby(bin_id).mean()
+
+fig, ax = plt.subplots(figsize=(10, 7))
 for method, color in zip(unc.ALL_METHODS, plotting.CATEGORICAL):
-    curve = [unc.trigger_metrics(actual_all, *pooled_bands(method, lv)) for lv in unc.DEFAULT_AUC_LEVELS]
-    x = [c["false_trigger_rate"] for c in curve]
-    y = [c["danger_caught"] for c in curve]
-    auc = np.trapezoid([0.0] + y + [1.0], [0.0] + x + [1.0])
-    ax.plot(x, y, color=color, linewidth=1.8, marker="o", markersize=3, label=f"{METHOD_LABELS[method]} -- AUC {auc:.3f}")
-ax.plot([0, 1], [0, 1], color=plotting.BASELINE, linewidth=1, linestyle="--")
-ax.set_xlabel("False trigger rate (share of safe readings that set off the alarm)")
-ax.set_ylabel("Danger caught (share of dangerous readings that set off the alarm)")
-ax.set_xlim(0, 1)
-ax.set_ylim(0, 1)
-ax.legend(frameon=False, loc="lower right", fontsize=9)
+    level = unc.level_for_false_trigger_rate(engines, actuals, method, 0.35)
+    lo, hi = pooled_bands(method, level)
+    width_by_bin = pd.Series(hi - lo).groupby(bin_id).mean()
+    ratio = width_by_bin.iloc[-1] / width_by_bin.iloc[0]
+    ax.plot(range(N_BINS), width_by_bin.values, color=color, linewidth=1.8, marker="o", markersize=4,
+             label=f"{METHOD_LABELS[method]} -- widest/narrowest bin {ratio:.2f}x")
+ax.set_xticks(range(N_BINS))
+ax.set_xticklabels([f"{v:.0f}" for v in bin_center.values])
+ax.set_xlabel("Mean |actual - forecast| in this bin, mg/dL (bins have equal patient-counts, easiest to hardest)")
+ax.set_ylabel("Mean band width, mg/dL (each method sized to a 35% pooled false trigger rate)")
+ax.legend(frameon=False, loc="upper left", fontsize=9)
 ax.set_title("No error weighted model, all 25 AZT1D patients pooled", loc="left")
 fig.tight_layout()
 plt.show()
