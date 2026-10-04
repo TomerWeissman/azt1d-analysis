@@ -29,6 +29,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 3. Prepare slides for the Thursday Oct 8 meeting with Volkan.
 
 ## Findings
+- **Caveat, by Clarke zone:** the situation band is about the same width in every zone (OhioT1DM 85-87 mg/dL in A, B, D), so it does not widen for badly wrong forecasts. It catches more in zone A (98% vs 96%) but fewer in zone B (44% vs 59%) and zone D, the dangerous misses (41% vs 62% OhioT1DM; 22% vs 39% AZT1D). GARCH widens somewhat after big errors, so it catches more of them. Situation-aware is not the same as error-aware.
 - Level-free check (H37): overall, all methods trade width for coverage almost identically. The situation bands' advantage is not overall efficiency; it is being honest in each situation (the per-situation results). CQR edges ahead on interval score. The paper should claim per-situation calibration, not overall efficiency.
 - Verification (H32-H35): situation grouping is real (beats shuffled groups), works across models, and survives patient resampling. The strongest rival is CQR, which comes close on OhioT1DM. The hybrid's edge over plain Mondrian is not statistically robust.
 - More data won't help this model (H30). The curve is flat by about 35% of today's data. The remaining error is either noise or a limit of the model and its inputs; this test can't tell which.
@@ -104,9 +105,13 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [scripts/coverage_width_curves.py](scripts/coverage_width_curves.py) | H37: caught vs width for every method at levels 50% to 95% | current |
 | [results/verdict_h37.txt](results/verdict_h37.txt) | H37 verdict, matched-width comparisons, interval scores | current |
 | [figures/h37_coverage_width.png](figures/h37_coverage_width.png) | H37: points caught vs band width, all methods, both datasets | current |
+| [scripts/bands_by_clarke_zone.py](scripts/bands_by_clarke_zone.py) | Band width and share caught per Clarke zone, situation vs GARCH. Descriptive | current |
+| [results/bands_by_clarke_zone.csv](results/bands_by_clarke_zone.csv) | Per-zone counts, widths, catch rates | current |
+| [figures/bands_by_clarke_zone.png](figures/bands_by_clarke_zone.png) | Clarke grid coloured by band width, and per-zone bars | current |
 | README.md | This page | current |
 
 ## Remember
+- Situation bands catch fewer zone D (dangerous) points than GARCH. Any paper claim must include this. Calibration per situation is not calibration per error size.
 - The situation-specific band is Mondrian conformal prediction, and the hybrid is normalized conformal inside Mondrian groups. Name them that way. The novelty is applying them to glucose and the miscalibration finding, not the method.
 - The fine-tuning baseline used five target patients and one seed. Any new result should be read against that.
 - Ensemble disagreement was about 1.6 mg/dL last week. With three members, variance estimates are noisy. Expect large error bars.

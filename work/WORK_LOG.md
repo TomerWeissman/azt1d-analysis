@@ -245,3 +245,11 @@ commits: pending (this week's commit); pre-registration pushed before the run
 runtime: 77 s
 outcome: H37 supported by its rule, small effect. At GARCH's widths, situation bands catch +0.1 to +1.8 points (OhioT1DM, 7 of 7) and +0.1 to +1.0 (AZT1D, 6 of 6). Curves nearly overlap. Interval score at 80%: OhioT1DM CQR 130, Mondrian 131, conformal 133, hybrid 135, GARCH 138; AZT1D CQR 111, Mondrian 114. At 95% CQR also best.
 notes: changes the paper claim. Situation bands are not more efficient overall; their gain is per-situation calibration. CQR is the overall-efficiency leader on interval score.
+
+## 2026-10-04 | 5_10 | Band width and catch rate by Clarke zone (descriptive)
+type: analysis
+status: done
+files: work/5_10/scripts/bands_by_clarke_zone.py, work/5_10/results/bands_by_clarke_zone.csv, work/5_10/figures/bands_by_clarke_zone.png, work/5_10/README.md
+commits: pending (this week's commit)
+outcome: situation band width is nearly flat across Clarke zones (OhioT1DM A 87, B 86, D 86 mg/dL) while GARCH widens in B, C, D. Caught in zone D: situation 41% vs GARCH 62% (OhioT1DM), 22% vs 39% (AZT1D). Zone A: 98% vs 96%.
+notes: important caveat for the paper. Clarke zone depends on the realised error, which no band can know in advance; GARCH partly tracks it through recent errors.
