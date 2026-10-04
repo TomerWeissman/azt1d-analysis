@@ -131,3 +131,12 @@ commits: b0c9e53
 runtime: 25.1 min
 outcome: RMSE flat across 0, 1, 3, and 7 days of adaptation. Evidential epistemic spikes at 1 day in all 5 patients. At 7 days, epistemic is 0.8% of total variance for the ensemble and 57% for evidential.
 notes: 5 target patients, 1 seed. Notion journal not yet updated with these results.
+
+## 2026-10-04 | 28_9 | Restructure: code moved into week folders
+type: docs
+status: done
+files: work/7_9/notebooks/, work/14_9/notebooks/, work/14_9/scripts/, work/21_9/notebooks/, work/21_9/scripts/, work/21_9/docs/, work/28_9/notebooks/, work/28_9/scripts/, work/28_9/results/, work/28_9/figures/, README.md
+commits: 25763df (the seed-fix notebooks 02, 05, 06, 07 are not in it)
+outcome: every notebook and script moved out of notebooks/, notebooks_2/, notebooks_3/, scripts/, results/, figures/. src/azt1d stays shared.
+notes: path map. notebooks/01, 02 -> 7_9/notebooks/. notebooks/03, 04, 05, 06, 07, 08 -> 14_9/notebooks/. notebooks_2/01, 02 -> 21_9/notebooks/. notebooks_2/03, 04 and notebooks_3/01 -> 28_9/notebooks/. scripts/build_summary_notebook.py and build_recursive_notebook.py -> 14_9/scripts/. scripts/build_uncertainty_notebook.py and build_one_patient_notebook.py -> 21_9/scripts/. build_interval_utility, build_method_comparison, build_hupa, train_hupa_patient, run_finetune -> 28_9/scripts/. capstone_paper_draft.md/.html -> 21_9/docs/. results/quick_metrics.csv -> 28_9/results/. figures/quick_results.png -> 28_9/figures/. Earlier entries keep their original paths; use this map to find them.
+notes: verified. All 13 notebooks resolve the repo root from their new folders. notebooks 01 (7_9) and 03 (28_9) were executed end to end from their new folders with no cell errors. Outputs went to the scratch folder, not the committed notebooks. Uncommitted: 7_9/notebooks/02, 14_9/notebooks/05, 06, 07 (seed-fix changes). The old copies of those four are still in git history at their old paths.
