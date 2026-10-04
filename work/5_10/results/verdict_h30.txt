@@ -1,0 +1,7 @@
+H30 (unlimited data would cut error at least 25%): NOT SUPPORTED
+  pooled test MSE by training fraction: 10%: 1170, 20%: 1091, 35%: 1064, 60%: 1036, 100%: 1074
+  full-data MSE 1074 (RMSE 32.8 mg/dL)
+  fitted asymptote 1054 (RMSE 32.5 mg/dL) = 98% of full-data MSE
+  90% bootstrap interval over patients: 93% to 99% (500 successful fits of 500)
+  fit: a=1053.5, b=1.72, c=1.83
+  caveat: the asymptote is for this model class and these inputs, and assumes more data looks like this data

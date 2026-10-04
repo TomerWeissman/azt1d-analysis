@@ -13,6 +13,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H27, not supported (narrowly)**: situation-specific widths put 18 of 25 situations at 75% to 85% coverage. The rule needed 20. Current GARCH bands: 13 of 25.
 - **H28, supported**: on fresh data (OhioT1DM), situation-specific bands cut the distance from the 80% target by 41% vs GARCH (6.7 to 3.9 points), closer for 9 of 12 patients, and 12% narrower (87 vs 99 mg/dL).
 - **H29, not supported**: the model does not get worse over time on average (median test/validation error 1.03). Per-patient shifts (0.81 to 1.45) track changes in glucose variability (correlation 0.77).
+- **H30, not supported**: unlimited data of this kind would cut the plain model's error by only about 2% (asymptote 98% of today's error, 90% interval 93% to 99%). The model is not data-limited.
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -21,6 +22,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 3. Prepare slides for the Thursday Oct 8 meeting with Volkan.
 
 ## Findings
+- More data won't help this model (H30). The curve is flat by about 35% of today's data. The remaining error is either noise or a limit of the model and its inputs; this test can't tell which.
 - Situation-specific bands hold up on a dataset they never touched (H28). This is the week's main confirmed result.
 - Earlier 'drift' was a misreading: errors move with each patient's glucose variability in the later period, not with time itself (H29).
 - Situation-specific widths narrow the coverage spread from 31 points to 16 points. More situations land near 80%, but the rule missed by two.
@@ -35,6 +37,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - Conformal is right on median (79%), but coverage ranges from 65% to 87% across patients. The promise holds on average, not per patient.
 
 ## Outcomes
+- H30: pooled test RMSE 34.2 (10%), 33.0 (20%), 32.6 (35%), 32.2 (60%), 32.8 (100%) mg/dL. Asymptote 32.5 mg/dL. Seed-to-seed spread at full data (about 1 mg/dL) is larger than the gain from more data. Runtime 33 min.
 - H28 (OhioT1DM): coverage error GARCH 6.7, situation-specific 3.9 points (41% cut). 9 of 12 patients closer. Overall coverage GARCH 83.2%, new 79.4%. Mean width 99.3 vs 87.0 mg/dL. Worse for patients 570, 540, 552 and situations 250+ flat and under 70 fast fall.
 - H29 (AZT1D): median ratio 1.03; 8 of 25 at least 10% worse; 11 better; range 0.81 to 1.45; median RMSE validation 29.4, test halves 30.8 and 30.0.
 - H27: situation-specific 18 of 25 inside 75% to 85%, coverage range 67% to 83%. GARCH on the same windows: 13 of 25, range 64% to 95%. Two situations fell back to the pooled width.
@@ -70,6 +73,9 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [figures/h28_ohio_situation_bands.png](figures/h28_ohio_situation_bands.png) | H28: distance from 80% target, by situation and by patient | current |
 | [scripts/drift.py](scripts/drift.py) | H29: error by period, and its link to glucose variability | current |
 | [figures/h29_drift.png](figures/h29_drift.png) | H29: validation vs test error per patient; error change vs variability change | current |
+| [scripts/learning_curve_ceiling.py](scripts/learning_curve_ceiling.py) | H30: retrains the plain model on 10% to 100% of its data, fits where error levels off | current |
+| [results/learning_curve_runs.csv](results/learning_curve_runs.csv) | Every training run: patient, fraction, seed, test error | current |
+| [figures/learning_curve_ceiling.png](figures/learning_curve_ceiling.png) | H30: forecast error vs amount of training data | current |
 | README.md | This page | current |
 
 ## Remember

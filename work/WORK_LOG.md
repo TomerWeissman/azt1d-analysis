@@ -192,3 +192,12 @@ commits: pending (this week's commit); pre-registration pushed before the runs
 runtime: H28 4 s, H29 about 40 s
 outcome: H28 supported: OhioT1DM coverage error 6.7 to 3.9 points (41% cut), 9 of 12 patients closer, bands 12% narrower. H29 not supported: median test/validation RMSE 1.03; per-patient changes track glucose variability (r = 0.77).
 notes: H28 width gain is partly because GARCH over-covers on Ohio (83.2% overall). H29 corrects earlier wording: validation-to-test changes are patient variability, not systematic decay.
+
+## 2026-10-04 | 5_10 | Learning curve for the noise ceiling (H30)
+type: experiment
+status: done
+files: work/5_10/scripts/learning_curve_ceiling.py, work/5_10/results/learning_curve_runs.csv, work/5_10/results/verdict_h30.txt, work/5_10/figures/learning_curve_ceiling.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the run
+runtime: 1978 s (250 trainings: 25 patients x 5 fractions x 2 seeds)
+outcome: H30 not supported. Asymptote 1054 vs full-data MSE 1074 (98%); bootstrap 90% interval 93% to 99%. More data of this kind cuts error by about 2%.
+notes: the remaining error is noise plus model/input limits; a capacity or input test is needed to split them. Scaling used full-train statistics at every fraction (train-only information).
