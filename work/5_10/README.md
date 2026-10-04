@@ -40,6 +40,9 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [scripts/learning_curve_unseen_patients.py](scripts/learning_curve_unseen_patients.py) | H18 and H20 test: learning curve and unseen patients. Written, not yet run (needs approval for run time) | current, not run |
 | [scripts/cheap_tests_h23_h25.py](scripts/cheap_tests_h23_h25.py) | Runs H23, H24, H25 on the saved plain-model checkpoints. No training | current |
 | [results/verdicts_h23_h25.txt](results/verdicts_h23_h25.txt) | Verdicts and numbers for H23, H24, H25 | current |
+| [figures/h23_lookalike.png](figures/h23_lookalike.png) | H23: outcome gaps between look-alike windows, and the noise bound against model error | current |
+| [figures/h24_alarms.png](figures/h24_alarms.png) | H24: alarms per day per patient, band vs point; pooled sensitivity | current |
+| [figures/h25_conformal_coverage.png](figures/h25_conformal_coverage.png) | H25: per-patient coverage of conformal 80% bands | current |
 | README.md | This page | current |
 
 ## Remember

@@ -33,7 +33,9 @@ ROOT = next(p for p in Path(__file__).resolve().parents if (p / "pyproject.toml"
 WEEK = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from azt1d import loading, reference as ref  # noqa: E402
+import matplotlib.pyplot as plt  # noqa: E402
+
+from azt1d import loading, plotting, reference as ref  # noqa: E402
 from azt1d.glimmer import checkpoint as ckpt, uncertainty as unc  # noqa: E402
 
 RUN = "cnn_lstm_v0"
@@ -62,7 +64,7 @@ def load_frames():
 
 # ------------------------------------------------------------------ H23
 
-def h23(frames) -> str:
+def h23(frames) -> tuple[str, dict]:
     rng = np.random.default_rng(0)
     X, y, pid, tix, pred, act = [], [], [], [], [], []
     for sid, (_, test) in frames.items():
@@ -95,7 +97,7 @@ def h23(frames) -> str:
         f"  upper bound as a share of model error: {share:.0%} (rule: at most {H23_LIMIT:.0%})",
         "  caveat: neighbours still differ in inputs, so this is an upper bound on noise, not the noise itself",
     ])
-    return text
+    return text, {"d": d, "model_mse": model_mse, "noise_upper": noise_upper}
 
 
 # ------------------------------------------------------------------ H24
@@ -189,6 +191,72 @@ def h25(frames) -> tuple[str, pd.DataFrame]:
     return text, res
 
 
+def plot_figures(s23: dict, r24: pd.DataFrame, r25: pd.DataFrame, out: Path) -> None:
+    figs = out.parent / "figures"
+    figs.mkdir(parents=True, exist_ok=True)
+    plotting.apply_style()
+    C = plotting.CATEGORICAL
+
+    # H23: pair differences, and the bound against the model's error
+    fig, (a, b) = plt.subplots(1, 2, figsize=(12, 4.6))
+    a.hist(s23["d"], bins=80, color=C[0])
+    a.set_title("H23: 60-minute outcome gaps between look-alike windows", loc="left", fontsize=10)
+    a.set_xlabel("Difference in glucose (mg/dL)")
+    a.set_ylabel("Pairs")
+    labels = ["model error (MSE)", "noise upper bound", "75% of model error (rule)"]
+    vals = [s23["model_mse"], s23["noise_upper"], 0.75 * s23["model_mse"]]
+    b.bar(labels, vals, color=[C[1], C[2], plotting.BASELINE])
+    b.set_title("H23: noise bound vs model error (rule: bound at most 75%)", loc="left", fontsize=10)
+    b.set_ylabel("mg2/dL2")
+    fig.tight_layout()
+    fig.savefig(figs / "h23_lookalike.png", dpi=150)
+    plt.close(fig)
+
+    # H24: alarms per day per patient, and pooled sensitivity
+    days = r24.test_days
+    pt, bd = r24.point_onsets / days, r24.band_onsets / days
+    fig, (a, b) = plt.subplots(1, 2, figsize=(12, 4.6))
+    lim = max(pt.max(), bd.max()) * 1.1
+    a.scatter(pt, bd, color=C[0], s=28)
+    a.plot([0, lim], [0, lim], ls="--", color=plotting.BASELINE, label="equal")
+    a.plot([0, lim], [0, 0.8 * lim], ls=":", color=C[2], label="20% fewer (rule)")
+    a.set_xlim(0, lim); a.set_ylim(0, lim)
+    a.set_xlabel("Point-threshold alarms per day")
+    a.set_ylabel("Band alarms per day")
+    a.set_title("H24: one dot per patient (below the dotted line = band wins)", loc="left", fontsize=10)
+    a.legend(frameon=False, fontsize=8)
+    names = ["point threshold", "band (GARCH)"]
+    sens = [r24.point_sensitivity.mean(), r24.band_sensitivity.mean()]
+    rate = [r24.point_onsets.sum() / days.sum(), r24.band_onsets.sum() / days.sum()]
+    b.bar(names, sens, color=[C[0], C[1]])
+    b.axhline(0.90, ls="--", color=plotting.BASELINE, label="90% target")
+    for i, (s, r) in enumerate(zip(sens, rate)):
+        b.text(i, s + 0.02, f"{s:.2f} sensitivity\n{r:.1f} alarms/day", ha="center", fontsize=9)
+    b.set_ylim(0, 1.1)
+    b.set_ylabel("Mean sensitivity on test")
+    b.set_title("H24: sensitivity and alarm rate, pooled", loc="left", fontsize=10)
+    b.legend(frameon=False, fontsize=8, loc="lower right")
+    fig.tight_layout()
+    fig.savefig(figs / "h24_alarms.png", dpi=150)
+    plt.close(fig)
+
+    # H25: per-patient coverage of conformal 80% bands
+    d = r25.sort_values("coverage_80").reset_index(drop=True)
+    fig, ax = plt.subplots(figsize=(12, 4.6))
+    ax.axhspan(0.75, 0.85, color=C[2], alpha=0.15, label="75% to 85% (rule)")
+    ax.axhline(0.80, ls="--", color=plotting.BASELINE, label="80% target")
+    colors = [C[2] if ok else C[1] for ok in d.inside_75_85]
+    ax.scatter(range(len(d)), d.coverage_80, c=colors, s=48, zorder=3)
+    ax.set_xticks(range(len(d)), [str(s) for s in d.subject_id], fontsize=8)
+    ax.set_xlabel("Patient (sorted by coverage)")
+    ax.set_ylabel("Share of test readings inside the band")
+    ax.set_title("H25: conformal 80% bands, one dot per patient (green = inside 75% to 85%)", loc="left", fontsize=10)
+    ax.legend(frameon=False, fontsize=8, loc="upper left")
+    fig.tight_layout()
+    fig.savefig(figs / "h25_conformal_coverage.png", dpi=150)
+    plt.close(fig)
+
+
 def main():
     t0 = time.time()
     out = WEEK / "results"
@@ -196,7 +264,7 @@ def main():
     frames = load_frames()
     print(f"loaded {len(frames)} patients ({time.time() - t0:.0f}s)", flush=True)
 
-    t23 = h23(frames)
+    t23, s23 = h23(frames)
     (out / "h23_lookalike.txt").write_text(t23 + "\n")
     print(t23, flush=True)
 
@@ -208,6 +276,7 @@ def main():
     r25.to_csv(out / "h25_conformal_coverage.csv", index=False)
     print(t25, flush=True)
 
+    plot_figures(s23, r24, r25, out)
     (out / "verdicts_h23_h25.txt").write_text("\n\n".join([t23, t24, t25]) + "\n")
     print(f"runtime {time.time() - t0:.0f}s", flush=True)
 
