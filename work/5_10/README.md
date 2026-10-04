@@ -76,6 +76,8 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [scripts/learning_curve_ceiling.py](scripts/learning_curve_ceiling.py) | H30: retrains the plain model on 10% to 100% of its data, fits where error levels off | current |
 | [results/learning_curve_runs.csv](results/learning_curve_runs.csv) | Every training run: patient, fraction, seed, test error | current |
 | [figures/learning_curve_ceiling.png](figures/learning_curve_ceiling.png) | H30: forecast error vs amount of training data | current |
+| [scripts/example_patient_bands.py](scripts/example_patient_bands.py) | One-patient example: GARCH vs situation-specific bands over 24 hours | current |
+| [figures/example_patient_588_bands.png](figures/example_patient_588_bands.png) | OhioT1DM patient 588, the 24 hours with the widest glucose range, both bands | current |
 | README.md | This page | current |
 
 ## Remember
