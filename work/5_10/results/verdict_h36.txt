@@ -1,0 +1,8 @@
+H36 (Mondrian at least 10% better calibrated than tuned full-window CQR, OhioT1DM): SUPPORTED
+  ohiot1dm: GARCH 6.7 pts, width 99, overall 83.2%; CQR (tuned, full window) 4.9 pts, width 94, overall 82.3%; Mondrian (situation) 4.0 pts, width 87, overall 79.4%
+    CQR minus Mondrian, 90% patient-bootstrap interval: -0.7 to 2.4 pts (positive = Mondrian better)
+    CQR settings chosen: low {'learning_rate': 0.05, 'max_leaf_nodes': 15}, high {'learning_rate': 0.05, 'max_leaf_nodes': 15}
+  azt1d: GARCH 6.0 pts, width 83, overall 82.3%; CQR (tuned, full window) 8.9 pts, width 71, overall 77.6%; Mondrian (situation) 3.8 pts, width 71, overall 77.4%
+    CQR minus Mondrian, 90% patient-bootstrap interval: 2.4 to 6.1 pts (positive = Mondrian better)
+    CQR settings chosen: low {'learning_rate': 0.05, 'max_leaf_nodes': 15}, high {'learning_rate': 0.05, 'max_leaf_nodes': 15}
+  Mondrian vs CQR on OhioT1DM: 19% lower coverage error (rule: at least 10%)

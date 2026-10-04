@@ -227,3 +227,12 @@ commits: pending (this week's commit); pre-registration pushed before the run
 runtime: 157 s
 outcome: H32 not supported (Mondrian vs CQR 18% on OhioT1DM, rule 20%; 52% on AZT1D; hybrid beats CQR on both). H33 supported (real 4.0 vs shuffled 6.6-6.9). H34 supported (23-47% vs GARCH, 4 combos). H35 supported (Mondrian-vs-GARCH 90% CI 0.3 to 3.6; hybrid-vs-Mondrian CI -0.5 to 2.1, not robust).
 notes: CQR here uses summary features (forecast, level, trend, GARCH sigma) and half of validation for training. A stronger CQR (full input window) could close the gap further. No seed variation of the forecasting models; bootstrap is over patients only.
+
+## 2026-10-04 | 5_10 | Tuned full-window CQR vs situation bands (H36)
+type: experiment
+status: done
+files: work/5_10/scripts/strong_cqr.py, work/5_10/results/h36_strong_cqr.csv, work/5_10/results/verdict_h36.txt, work/5_10/figures/h36_strong_cqr.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the run
+runtime: 144 s
+outcome: H36 supported by its rule. OhioT1DM: Mondrian 4.0 vs CQR 4.9 points (19% better, rule 10%), widths 87 vs 94; patient-bootstrap interval for the gap -0.7 to 2.4 (crosses zero). AZT1D: Mondrian 3.8 vs CQR 8.9, interval 2.4 to 6.1.
+notes: tuning picked the smallest setting in the grid for both quantiles on both datasets (learning rate 0.05, 15 leaves), so a grid extending smaller could do better. Bootstrap holds the fitted models fixed (not refit per resample). CQR conformalizes on 30% of validation, Mondrian on all of it.

@@ -19,6 +19,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H33, supported**: real situations 4.0 points vs 6.6 to 6.9 for 20 shuffled groupings. The situations matter, not just the number of groups.
 - **H34, supported**: the gain over GARCH holds for GLIMMER-weighted and Transformer models on both datasets (23% to 47%).
 - **H35, supported**: Mondrian-vs-GARCH gain 90% interval 0.3 to 3.6 points. Hybrid-vs-Mondrian interval -0.5 to 2.1 includes zero: the hybrid's extra gain is not robust.
+- **H36, supported (by the rule; not robust on OhioT1DM)**: situation bands 19% better calibrated than tuned full-window CQR on OhioT1DM (4.0 vs 4.9 points), and narrower (87 vs 94). Patient-bootstrap interval -0.7 to 2.4 crosses zero. On AZT1D clearly better (3.8 vs 8.9; interval 2.4 to 6.1).
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -95,6 +96,9 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [figures/verify_h33_shuffle.png](figures/verify_h33_shuffle.png) | H33: real situations vs 20 shuffled groupings | current |
 | [figures/verify_h34_models.png](figures/verify_h34_models.png) | H34: the gain on four model/dataset combinations | current |
 | [figures/verify_h35_bootstrap.png](figures/verify_h35_bootstrap.png) | H35: bootstrap distributions of the gains | current |
+| [scripts/strong_cqr.py](scripts/strong_cqr.py) | H36: tuned full-window CQR vs situation bands | current |
+| [results/verdict_h36.txt](results/verdict_h36.txt) | H36 verdict, numbers, bootstrap intervals, chosen settings | current |
+| [figures/h36_strong_cqr.png](figures/h36_strong_cqr.png) | H36: GARCH, tuned CQR, situation bands on both datasets | current |
 | README.md | This page | current |
 
 ## Remember
