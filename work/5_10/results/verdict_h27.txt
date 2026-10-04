@@ -1,0 +1,4 @@
+H27 (situation-specific widths put at least 20 of 25 situations at 75% to 85% coverage): NOT SUPPORTED
+  situation-specific: 18 of 25 inside 75% to 85%; coverage range 67% to 83%
+  current GARCH bands on the same windows: 13 of 25 inside; coverage range 64% to 95%
+  situations that used the pooled width (fewer than 100 validation windows): 2

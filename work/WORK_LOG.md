@@ -174,3 +174,12 @@ commits: pending (this week's commit)
 runtime: 41 s
 outcome: H26 not supported. Look-alike noise bounds are 78% to 118% of model error across situations, too loose to separate. Error varies strongly by situation (RMSE 26 mg/dL steady, 61 mg/dL fast rise above 250). 80% band coverage varies from 64% to 95% by situation.
 notes: literature check found region-based error grids (CG-EGA) and state-switching models, but no per-region noise decomposition. Two key papers did not open (state-switching preprint: title only; CG-EGA: 403). Verify before claiming novelty.
+
+## 2026-10-04 | 5_10 | Situation-specific bands (H27)
+type: experiment
+status: done
+files: work/5_10/scripts/situation_bands.py, work/5_10/results/situation_bands.csv, work/5_10/results/verdict_h27.txt, work/5_10/figures/situation_bands.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit)
+runtime: 40 s
+outcome: H27 not supported (narrowly). Situation-specific widths: 18 of 25 situations inside 75% to 85%, rule needed 20. Current GARCH bands: 13 of 25. Coverage spread narrowed from 64% to 95% to 67% to 83%. Two situations used the pooled width.
+notes: a first run failed on a column-assignment bug, fixed before the reported run. The remaining misses are high-glucose slow falls and flat readings, consistent with validation-to-test drift.
