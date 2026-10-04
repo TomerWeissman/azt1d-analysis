@@ -201,3 +201,12 @@ commits: pending (this week's commit); pre-registration pushed before the run
 runtime: 1978 s (250 trainings: 25 patients x 5 fractions x 2 seeds)
 outcome: H30 not supported. Asymptote 1054 vs full-data MSE 1074 (98%); bootstrap 90% interval 93% to 99%. More data of this kind cuts error by about 2%.
 notes: the remaining error is noise plus model/input limits; a capacity or input test is needed to split them. Scaling used full-train statistics at every fraction (train-only information).
+
+## 2026-10-04 | 5_10 | GARCH x situation hybrid bands (H31)
+type: experiment
+status: done
+files: work/5_10/scripts/hybrid_bands.py, work/5_10/results/h31_hybrid_ohiot1dm.csv, work/5_10/results/h31_hybrid_azt1d.csv, work/5_10/results/verdict_h31.txt, work/5_10/figures/h31_hybrid_summary.png, work/5_10/figures/example_patient_588_three_bands.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the run
+runtime: about 1 min
+outcome: H31 supported narrowly. OhioT1DM: hybrid 3.1 vs situation 4.0 vs GARCH 6.7 points from target (21% better than situation), 7 of 12 patients better (the rule's minimum). AZT1D: 3.1 vs 3.8 vs 6.0, 14 of 25 better.
+notes: first run had no sensor-range clipping, so bands went below 0. Rerun with clipping to 40-400 mg/dL, as every earlier band; verdict unchanged. OhioT1DM is the same data as H28, so this is not a second fresh dataset.

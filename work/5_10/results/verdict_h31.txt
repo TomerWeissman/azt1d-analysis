@@ -1,0 +1,4 @@
+H31 (hybrid beats situation-only on OhioT1DM): SUPPORTED
+  ohiot1dm: coverage error GARCH 6.7, situation 4.0, hybrid 3.1 points; hybrid vs situation +21% better; hybrid better for 7 of 12 patients; widths GARCH (current) 99, situation only 87, GARCH x situation (hybrid) 89 mg/dL
+  azt1d: coverage error GARCH 6.0, situation 3.8, hybrid 3.1 points; hybrid vs situation +20% better; hybrid better for 14 of 25 patients; widths GARCH (current) 83, situation only 71, GARCH x situation (hybrid) 76 mg/dL
+  rule (OhioT1DM): at least 10% lower coverage error than situation-only, and lower for at least 7 of 12 patients

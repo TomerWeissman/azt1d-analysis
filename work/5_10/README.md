@@ -14,6 +14,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H28, supported**: on fresh data (OhioT1DM), situation-specific bands cut the distance from the 80% target by 41% vs GARCH (6.7 to 3.9 points), closer for 9 of 12 patients, and 12% narrower (87 vs 99 mg/dL).
 - **H29, not supported**: the model does not get worse over time on average (median test/validation error 1.03). Per-patient shifts (0.81 to 1.45) track changes in glucose variability (correlation 0.77).
 - **H30, not supported**: unlimited data of this kind would cut the plain model's error by only about 2% (asymptote 98% of today's error, 90% interval 93% to 99%). The model is not data-limited.
+- **H31, supported (narrowly)**: GARCH x situation bands beat situation-only by 21% on OhioT1DM (3.1 vs 4.0 points from the 80% target), better for 7 of 12 patients (the minimum). AZT1D agrees: 20% better, 14 of 25 patients.
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -37,6 +38,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - Conformal is right on median (79%), but coverage ranges from 65% to 87% across patients. The promise holds on average, not per patient.
 
 ## Outcomes
+- H31: OhioT1DM coverage error GARCH 6.7, situation 4.0, hybrid 3.1 points; widths 99, 87, 89 mg/dL. AZT1D: 6.0, 3.8, 3.1 points; widths 83, 71, 76 mg/dL. Patient 588 is a case where the hybrid is worse (77% vs 82% overall coverage).
 - H30: pooled test RMSE 34.2 (10%), 33.0 (20%), 32.6 (35%), 32.2 (60%), 32.8 (100%) mg/dL. Asymptote 32.5 mg/dL. Seed-to-seed spread at full data (about 1 mg/dL) is larger than the gain from more data. Runtime 33 min.
 - H28 (OhioT1DM): coverage error GARCH 6.7, situation-specific 3.9 points (41% cut). 9 of 12 patients closer. Overall coverage GARCH 83.2%, new 79.4%. Mean width 99.3 vs 87.0 mg/dL. Worse for patients 570, 540, 552 and situations 250+ flat and under 70 fast fall.
 - H29 (AZT1D): median ratio 1.03; 8 of 25 at least 10% worse; 11 better; range 0.81 to 1.45; median RMSE validation 29.4, test halves 30.8 and 30.0.
@@ -78,6 +80,9 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [figures/learning_curve_ceiling.png](figures/learning_curve_ceiling.png) | H30: forecast error vs amount of training data | current |
 | [scripts/example_patient_bands.py](scripts/example_patient_bands.py) | One-patient example: GARCH vs situation-specific bands over 24 hours | current |
 | [figures/example_patient_588_bands.png](figures/example_patient_588_bands.png) | OhioT1DM patient 588, the 24 hours with the widest glucose range, both bands | current |
+| [scripts/hybrid_bands.py](scripts/hybrid_bands.py) | H31: GARCH, situation-only, and GARCH x situation bands on OhioT1DM and AZT1D | current |
+| [figures/h31_hybrid_summary.png](figures/h31_hybrid_summary.png) | H31: distance from 80% target and width, three methods, two datasets | current |
+| [figures/example_patient_588_three_bands.png](figures/example_patient_588_three_bands.png) | Patient 588 over 24 hours, all three bands | current |
 | README.md | This page | current |
 
 ## Remember
