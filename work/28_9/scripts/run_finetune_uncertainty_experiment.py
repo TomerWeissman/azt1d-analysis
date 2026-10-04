@@ -50,7 +50,8 @@ from sklearn.preprocessing import StandardScaler
 from torch import nn
 import torch.nn.functional as F
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = next(p for p in Path(__file__).resolve().parents if (p / "pyproject.toml").exists())
+WEEK = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from azt1d import hupa  # noqa: E402
@@ -405,9 +406,9 @@ def main():
         all_rows.extend(run_target_patient(sid, pretrain, device, scaler))
 
     results = pd.DataFrame(all_rows)
-    (ROOT / "results").mkdir(exist_ok=True)
-    (ROOT / "figures").mkdir(exist_ok=True)
-    results.to_csv(ROOT / "results" / "quick_metrics.csv", index=False)
+    (WEEK / "results").mkdir(exist_ok=True)
+    (WEEK / "figures").mkdir(exist_ok=True)
+    results.to_csv(WEEK / "results" / "quick_metrics.csv", index=False)
 
     summary = results.groupby(["method", "budget_days"]).agg(
         rmse_mean=("rmse", "mean"), rmse_sem=("rmse", "sem"),
@@ -434,7 +435,7 @@ def main():
         ax.set_xticks(list(BUDGET_DAYS))
         ax.legend(frameon=False, fontsize=8)
     fig.tight_layout()
-    fig.savefig(ROOT / "figures" / "quick_results.png", dpi=150)
+    fig.savefig(WEEK / "figures" / "quick_results.png", dpi=150)
 
     elapsed = time.time() - t0
     print(f"\nWrote results/quick_metrics.csv ({len(results)} rows) and figures/quick_results.png")

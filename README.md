@@ -23,14 +23,14 @@ all of that gap. The clinical picture is more favorable: the weighted loss consi
 trades precision for recall and cuts the most dangerous prediction errors (Clarke Error
 Grid zone D) roughly in half or better, on both datasets.
 
-**Start with [`07_summary.ipynb`](notebooks/07_summary.ipynb)**, a presentation-style
+**Start with [`07_summary.ipynb`](work/14_9/notebooks/07_summary.ipynb)**, a presentation-style
 walkthrough: the goal, the data and what's unusual about it, then the models compared,
 mostly graphs and explanations with code kept out of the way. Model results are labeled
 by what they actually are ("standard training," "fixed danger-weighted," "personalized
 danger-weighted") rather than the internal v0/v1/v3 shorthand used in notebooks 01-06.
 Every chart in it is built from already-saved results (trained models' saved
 predictions, the genetic algorithm's saved search results, see
-`scripts/build_summary_notebook.py`) -- nothing is retrained or re-run to produce it.
+`work/14_9/scripts/build_summary_notebook.py`) -- nothing is retrained or re-run to produce it.
 Notebooks 01-06 remain the full detailed record behind it, methodology and all.
 
 ## Notebooks
@@ -68,7 +68,7 @@ Notebooks 01-06 remain the full detailed record behind it, methodology and all.
 source venv/bin/activate
 pip install -e .          # installs the azt1d package + dependencies from requirements.txt
 python -m ipykernel install --user --name azt1d --display-name "AZT1D (venv)"
-jupyter notebook notebooks/01_data_exploration.ipynb
+jupyter notebook work/7_9/notebooks/01_data_exploration.ipynb
 ```
 
 (Already done once in this checkout, only needed again if you rebuild the venv.)
@@ -98,8 +98,10 @@ src/azt1d/
     checkpoint.py    per-subject checkpointing: trained models and predictions persist to
                       disk so a long run can resume after a crash, and so results can be
                       reused without retraining
-notebooks/
-  01-06 as described above
+work/
+  <week>/notebooks/   the notebooks, one folder per week (see work/WORK_LOG.md)
+  <week>/scripts/      the builders and experiment scripts for that week
+  <week>/README.md     what was done that week and what it found
 data/
   raw/            put the real AZT1D dataset here (gitignored, not ours to redistribute)
   processed/      extracted data, synthetic data, and checkpoints (all gitignored)

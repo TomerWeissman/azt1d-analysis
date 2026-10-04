@@ -1,12 +1,12 @@
 # Week 28_9: Sep 28 to Oct 4
 
 ## Completed
-- Sep 28: HUPA-UCM loader and patient 27 whole-record notebook (`notebooks_3/01_hupa_ucm_one_patient.ipynb`) (3c8ffd4, 684a60d)
+- Sep 28: HUPA-UCM loader and patient 27 whole-record notebook (`notebooks/01_hupa_ucm_one_patient.ipynb`) (3c8ffd4, 684a60d)
 - Sep 28: literature check against the HUPA-UCM uncertainty paper (Tan and McBeth, 2026), with a patient 27 comparison. No commit.
-- Sep 29: interval-utility ranking (`notebooks_2/03_interval_utility_ranking.ipynb`) (c3d0aa1)
+- Sep 29: interval-utility ranking (`notebooks/03_interval_utility_ranking.ipynb`) (c3d0aa1)
 - Sep 29: fixed a bug where HUPA files under `data/raw` were loaded as AZT1D subjects. Moved them to `data/hupa_ucm/` (c3d0aa1)
-- Sep 29: added EWMA, locally weighted conformal, and time-of-day quantiles. Six-method comparison (`notebooks_2/04_more_uncertainty_methods.ipynb`) (5086990, 7c9edff)
-- Sep 29: fine-tuning uncertainty experiment (`scripts/run_finetune_uncertainty_experiment.py`) (b0c9e53)
+- Sep 29: added EWMA, locally weighted conformal, and time-of-day quantiles. Six-method comparison (`notebooks/04_more_uncertainty_methods.ipynb`) (5086990, 7c9edff)
+- Sep 29: fine-tuning uncertainty experiment (`scripts/run_finetune_uncertainty_experiment.py`; output in `results/` and `figures/`) (b0c9e53)
 
 ## Outcomes
 - Patient 27 (573 days): plain RMSE 23.2, fixed-weight 30.4. About 8% of pooled readings are straight-line filler (unresolved).

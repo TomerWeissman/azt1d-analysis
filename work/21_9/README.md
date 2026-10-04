@@ -1,9 +1,9 @@
 # Week 21_9: Sep 21 to Sep 27
 
 ## Completed
-- Sep 22: capstone research paper draft (`capstone_paper_draft.md` and `.html`) (3c02cea)
-- Sep 26: stage 2 uncertainty bands on the fixed-weight model (`notebooks_2/01_uncertainty_bands.ipynb`) (47546d8, 0e4340a, a7a636e)
-- Sep 26: one-patient view with alarm plots and Clarke grid (`notebooks_2/02_one_patient_view.ipynb`) (495c937, 29bb669)
+- Sep 22: capstone research paper draft (`docs/capstone_paper_draft.md` and `.html`) (3c02cea)
+- Sep 26: stage 2 uncertainty bands on the fixed-weight model (`notebooks/01_uncertainty_bands.ipynb`) (47546d8, 0e4340a, a7a636e)
+- Sep 26: one-patient view with alarm plots and Clarke grid (`notebooks/02_one_patient_view.ipynb`) (495c937, 29bb669)
 - Sep 26: added the `arch` library for GARCH (`requirements.txt`)
 
 ## Outcomes

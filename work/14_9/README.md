@@ -19,5 +19,5 @@
 - Recursive forecasting: predicting every input flattens the curve. A time-of-day feature did not help. Real meal inputs improved it.
 
 ## Open
-- Commit the seed-fix changes (notebooks 02, 05, 06, 07).
+- Commit the seed-fix changes (notebooks 02 in `7_9/`, and 05, 06, 07 here).
 - Update the README and the 07_summary narrative. Both still show the pre-fix result.

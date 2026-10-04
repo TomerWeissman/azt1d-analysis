@@ -11,7 +11,8 @@ from pathlib import Path
 import nbformat
 from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = next(p for p in Path(__file__).resolve().parents if (p / "pyproject.toml").exists())
+WEEK = Path(__file__).resolve().parent.parent
 
 
 def md(text):
@@ -38,7 +39,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-PROJECT_ROOT = Path.cwd().parent if Path.cwd().name == "notebooks_2" else Path.cwd()
+PROJECT_ROOT = next(p for p in [Path.cwd(), *Path.cwd().parents] if (p / "pyproject.toml").exists())
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from azt1d import loading, plotting
@@ -117,6 +118,6 @@ plt.show()
 nb = new_notebook()
 nb["cells"] = cells
 nb["metadata"] = {"kernelspec": {"display_name": "AZT1D (venv)", "language": "python", "name": "azt1d"}}
-out_path = ROOT / "notebooks_2" / "04_more_uncertainty_methods.ipynb"
+out_path = WEEK / "notebooks" / "04_more_uncertainty_methods.ipynb"
 nbformat.write(nb, out_path)
 print(f"Wrote {out_path} ({len(cells)} cells)")

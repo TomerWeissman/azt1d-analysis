@@ -65,7 +65,7 @@ cells.append(code(
     "import numpy as np\n"
     "import pandas as pd\n"
     "import matplotlib.pyplot as plt\n\n"
-    "PROJECT_ROOT = Path.cwd().parent if Path.cwd().name == \"notebooks\" else Path.cwd()\n"
+    "PROJECT_ROOT = next(p for p in [Path.cwd(), *Path.cwd().parents] if (p / \"pyproject.toml\").exists())\n"
     "sys.path.insert(0, str(PROJECT_ROOT / \"src\"))\n\n"
     "from azt1d import loading, plotting\n"
     "from azt1d import reference as ref\n"
@@ -414,7 +414,7 @@ cells.append(md(
     "good the exogenous inputs are."
 ))
 
-out_path = "notebooks/08_recursive_forecasting.ipynb"
+out_path = WEEK / "notebooks" / "08_recursive_forecasting.ipynb"
 new_notebook = nbformat.v4.new_notebook()
 new_notebook["cells"] = cells
 new_notebook["metadata"] = {

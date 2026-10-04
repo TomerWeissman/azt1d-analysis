@@ -32,7 +32,8 @@ import numpy as np
 import pandas as pd
 from nbformat.v4 import new_markdown_cell
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = next(p for p in Path(__file__).resolve().parents if (p / "pyproject.toml").exists())
+WEEK = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from azt1d import loading, plotting, reference as ref  # noqa: E402
@@ -42,7 +43,7 @@ from azt1d.glimmer.train import region_errors  # noqa: E402
 
 plotting.apply_style()
 
-NB_DIR = ROOT / "notebooks"
+WORK = ROOT / "work"  # source notebooks live in each week folder
 CKPT_DIR = ROOT / "data/processed/checkpoints"
 
 C = plotting.CATEGORICAL
@@ -131,7 +132,7 @@ _src_cache = {}
 
 def _src_nb(name):
     if name not in _src_cache:
-        _src_cache[name] = nbformat.read(NB_DIR / name, as_version=4)
+        _src_cache[name] = nbformat.read(next(WORK.glob(f"*/notebooks/{name}")), as_version=4)
     return _src_cache[name]
 
 
@@ -782,6 +783,6 @@ new_nb = nbformat.v4.new_notebook()
 new_nb["cells"] = cells
 new_nb["metadata"] = {}
 
-out_path = NB_DIR / "07_summary.ipynb"
+out_path = WORK / "14_9" / "notebooks" / "07_summary.ipynb"
 nbformat.write(new_nb, out_path)
 print(f"Wrote {out_path} ({len(cells)} cells)")
