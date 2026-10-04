@@ -218,3 +218,12 @@ files: work/5_10/docs/literature_review_uncertainty.md
 commits: pending (this week's commit)
 outcome: situation-only bands are Mondrian conformal prediction; the hybrid is normalized conformal inside Mondrian groups. Neither method is new. No glucose/CGM paper found using group-conditional conformal calibration or measuring band coverage by level and trend. Paper contribution reframed as the application and finding, not the method.
 notes: abstracts and summaries only. Paper must cite Mondrian and normalized conformal, and compare against plain conformal and CQR.
+
+## 2026-10-04 | 5_10 | Verification checks H32-H35 for situation-grouped conformal bands
+type: experiment
+status: done
+files: work/5_10/scripts/verification_checks.py, work/5_10/results/verify_h32_alternatives.csv, verify_h33_shuffle.csv, verify_h34_models.csv, verify_h35_bootstrap.csv, verdicts_h32_h35.txt, work/5_10/figures/verify_h32_alternatives_ohiot1dm.png, verify_h32_alternatives_azt1d.png, verify_h33_shuffle.png, verify_h34_models.png, verify_h35_bootstrap.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the run
+runtime: 157 s
+outcome: H32 not supported (Mondrian vs CQR 18% on OhioT1DM, rule 20%; 52% on AZT1D; hybrid beats CQR on both). H33 supported (real 4.0 vs shuffled 6.6-6.9). H34 supported (23-47% vs GARCH, 4 combos). H35 supported (Mondrian-vs-GARCH 90% CI 0.3 to 3.6; hybrid-vs-Mondrian CI -0.5 to 2.1, not robust).
+notes: CQR here uses summary features (forecast, level, trend, GARCH sigma) and half of validation for training. A stronger CQR (full input window) could close the gap further. No seed variation of the forecasting models; bootstrap is over patients only.

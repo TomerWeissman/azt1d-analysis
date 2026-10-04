@@ -15,6 +15,10 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H29, not supported**: the model does not get worse over time on average (median test/validation error 1.03). Per-patient shifts (0.81 to 1.45) track changes in glucose variability (correlation 0.77).
 - **H30, not supported**: unlimited data of this kind would cut the plain model's error by only about 2% (asymptote 98% of today's error, 90% interval 93% to 99%). The model is not data-limited.
 - **H31, supported (narrowly)**: GARCH x situation bands beat situation-only by 21% on OhioT1DM (3.1 vs 4.0 points from the 80% target), better for 7 of 12 patients (the minimum). AZT1D agrees: 20% better, 14 of 25 patients.
+- **H32, not supported (narrowly)**: Mondrian beats plain conformal by 41-44% but CQR by only 18% on OhioT1DM (rule: 20%). On AZT1D it beats CQR by 52%. The hybrid beats CQR on both (3.1 vs 4.9 and 7.9).
+- **H33, supported**: real situations 4.0 points vs 6.6 to 6.9 for 20 shuffled groupings. The situations matter, not just the number of groups.
+- **H34, supported**: the gain over GARCH holds for GLIMMER-weighted and Transformer models on both datasets (23% to 47%).
+- **H35, supported**: Mondrian-vs-GARCH gain 90% interval 0.3 to 3.6 points. Hybrid-vs-Mondrian interval -0.5 to 2.1 includes zero: the hybrid's extra gain is not robust.
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -23,6 +27,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 3. Prepare slides for the Thursday Oct 8 meeting with Volkan.
 
 ## Findings
+- Verification (H32-H35): situation grouping is real (beats shuffled groups), works across models, and survives patient resampling. The strongest rival is CQR, which comes close on OhioT1DM. The hybrid's edge over plain Mondrian is not statistically robust.
 - More data won't help this model (H30). The curve is flat by about 35% of today's data. The remaining error is either noise or a limit of the model and its inputs; this test can't tell which.
 - Situation-specific bands hold up on a dataset they never touched (H28). This is the week's main confirmed result.
 - Earlier 'drift' was a misreading: errors move with each patient's glucose variability in the later period, not with time itself (H29).
@@ -83,6 +88,13 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [scripts/hybrid_bands.py](scripts/hybrid_bands.py) | H31: GARCH, situation-only, and GARCH x situation bands on OhioT1DM and AZT1D | current |
 | [figures/h31_hybrid_summary.png](figures/h31_hybrid_summary.png) | H31: distance from 80% target and width, three methods, two datasets | current |
 | [figures/example_patient_588_three_bands.png](figures/example_patient_588_three_bands.png) | Patient 588 over 24 hours, all three bands | current |
+| [scripts/verification_checks.py](scripts/verification_checks.py) | H32-H35: alternatives, shuffled groups, other models, bootstrap | current |
+| [results/verdicts_h32_h35.txt](results/verdicts_h32_h35.txt) | Verdicts and numbers for H32-H35 | current |
+| [figures/verify_h32_alternatives_ohiot1dm.png](figures/verify_h32_alternatives_ohiot1dm.png) | H32: all methods compared, OhioT1DM | current |
+| [figures/verify_h32_alternatives_azt1d.png](figures/verify_h32_alternatives_azt1d.png) | H32: all methods compared, AZT1D | current |
+| [figures/verify_h33_shuffle.png](figures/verify_h33_shuffle.png) | H33: real situations vs 20 shuffled groupings | current |
+| [figures/verify_h34_models.png](figures/verify_h34_models.png) | H34: the gain on four model/dataset combinations | current |
+| [figures/verify_h35_bootstrap.png](figures/verify_h35_bootstrap.png) | H35: bootstrap distributions of the gains | current |
 | README.md | This page | current |
 
 ## Remember

@@ -1,0 +1,14 @@
+H32 (Mondrian beats the standard alternatives by at least 20%, OhioT1DM): NOT SUPPORTED
+  ohiot1dm: GARCH 6.7 pts (width 99); plain conformal (pooled) 6.8 pts (width 87); plain conformal (per patient) 7.1 pts (width 87); CQR 4.9 pts (width 88); Mondrian (situation) 4.0 pts (width 87); Mondrian x GARCH (hybrid) 3.1 pts (width 89)
+  azt1d: GARCH 6.0 pts (width 83); plain conformal (pooled) 12.4 pts (width 72); plain conformal (per patient) 11.1 pts (width 72); CQR 7.9 pts (width 72); Mondrian (situation) 3.8 pts (width 71); Mondrian x GARCH (hybrid) 3.1 pts (width 76)
+  Mondrian cut vs each rival (OhioT1DM): plain conformal (pooled) 41%, plain conformal (per patient) 44%, CQR 18%
+H33 (real situations beat shuffled groups): SUPPORTED
+  real 4.0 pts; shuffled mean 6.8, range 6.6 to 6.9; real/shuffled-mean 59%
+H34 (gain holds on other models, at least 20% in all 4): SUPPORTED
+  OhioT1DM, GLIMMER fixed-weight CNN-LSTM: GARCH 7.0, Mondrian 4.9, hybrid 4.5 pts; Mondrian cut 29%
+  OhioT1DM, plain CNN-Transformer: GARCH 6.2, Mondrian 4.1, hybrid 2.7 pts; Mondrian cut 34%
+  AZT1D, GLIMMER fixed-weight CNN-LSTM: GARCH 6.8, Mondrian 3.6, hybrid 2.8 pts; Mondrian cut 47%
+  AZT1D, plain CNN-Transformer: GARCH 5.6, Mondrian 4.3, hybrid 2.6 pts; Mondrian cut 23%
+H35 (Mondrian-vs-GARCH gain survives patient resampling): SUPPORTED
+  Mondrian vs GARCH gain: median 2.0 pts, 90% interval 0.3 to 3.6
+  hybrid vs Mondrian gain: median 0.8 pts, 90% interval -0.5 to 2.1 (not in the rule)
