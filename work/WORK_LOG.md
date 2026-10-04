@@ -236,3 +236,12 @@ commits: pending (this week's commit); pre-registration pushed before the run
 runtime: 144 s
 outcome: H36 supported by its rule. OhioT1DM: Mondrian 4.0 vs CQR 4.9 points (19% better, rule 10%), widths 87 vs 94; patient-bootstrap interval for the gap -0.7 to 2.4 (crosses zero). AZT1D: Mondrian 3.8 vs CQR 8.9, interval 2.4 to 6.1.
 notes: tuning picked the smallest setting in the grid for both quantiles on both datasets (learning rate 0.05, 15 leaves), so a grid extending smaller could do better. Bootstrap holds the fitted models fixed (not refit per resample). CQR conformalizes on 30% of validation, Mondrian on all of it.
+
+## 2026-10-04 | 5_10 | Level-free coverage-vs-width curves (H37)
+type: experiment
+status: done
+files: work/5_10/scripts/coverage_width_curves.py, work/5_10/results/h37_curves.csv, work/5_10/results/verdict_h37.txt, work/5_10/figures/h37_coverage_width.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the run
+runtime: 77 s
+outcome: H37 supported by its rule, small effect. At GARCH's widths, situation bands catch +0.1 to +1.8 points (OhioT1DM, 7 of 7) and +0.1 to +1.0 (AZT1D, 6 of 6). Curves nearly overlap. Interval score at 80%: OhioT1DM CQR 130, Mondrian 131, conformal 133, hybrid 135, GARCH 138; AZT1D CQR 111, Mondrian 114. At 95% CQR also best.
+notes: changes the paper claim. Situation bands are not more efficient overall; their gain is per-situation calibration. CQR is the overall-efficiency leader on interval score.

@@ -20,6 +20,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H34, supported**: the gain over GARCH holds for GLIMMER-weighted and Transformer models on both datasets (23% to 47%).
 - **H35, supported**: Mondrian-vs-GARCH gain 90% interval 0.3 to 3.6 points. Hybrid-vs-Mondrian interval -0.5 to 2.1 includes zero: the hybrid's extra gain is not robust.
 - **H36, supported (by the rule; not robust on OhioT1DM)**: situation bands 19% better calibrated than tuned full-window CQR on OhioT1DM (4.0 vs 4.9 points), and narrower (87 vs 94). Patient-bootstrap interval -0.7 to 2.4 crosses zero. On AZT1D clearly better (3.8 vs 8.9; interval 2.4 to 6.1).
+- **H37, supported by the rule, but the effect is small**: at the same width, situation bands catch 0.1 to 1.8 more points than GARCH at every level, on both datasets. All methods' curves nearly overlap. On interval score, CQR is best on both datasets, situation bands close second.
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -28,6 +29,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 3. Prepare slides for the Thursday Oct 8 meeting with Volkan.
 
 ## Findings
+- Level-free check (H37): overall, all methods trade width for coverage almost identically. The situation bands' advantage is not overall efficiency; it is being honest in each situation (the per-situation results). CQR edges ahead on interval score. The paper should claim per-situation calibration, not overall efficiency.
 - Verification (H32-H35): situation grouping is real (beats shuffled groups), works across models, and survives patient resampling. The strongest rival is CQR, which comes close on OhioT1DM. The hybrid's edge over plain Mondrian is not statistically robust.
 - More data won't help this model (H30). The curve is flat by about 35% of today's data. The remaining error is either noise or a limit of the model and its inputs; this test can't tell which.
 - Situation-specific bands hold up on a dataset they never touched (H28). This is the week's main confirmed result.
@@ -99,6 +101,9 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [scripts/strong_cqr.py](scripts/strong_cqr.py) | H36: tuned full-window CQR vs situation bands | current |
 | [results/verdict_h36.txt](results/verdict_h36.txt) | H36 verdict, numbers, bootstrap intervals, chosen settings | current |
 | [figures/h36_strong_cqr.png](figures/h36_strong_cqr.png) | H36: GARCH, tuned CQR, situation bands on both datasets | current |
+| [scripts/coverage_width_curves.py](scripts/coverage_width_curves.py) | H37: caught vs width for every method at levels 50% to 95% | current |
+| [results/verdict_h37.txt](results/verdict_h37.txt) | H37 verdict, matched-width comparisons, interval scores | current |
+| [figures/h37_coverage_width.png](figures/h37_coverage_width.png) | H37: points caught vs band width, all methods, both datasets | current |
 | README.md | This page | current |
 
 ## Remember

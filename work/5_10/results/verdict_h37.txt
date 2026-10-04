@@ -1,0 +1,20 @@
+H37 (at the same width, situation bands catch more than GARCH, both datasets): SUPPORTED
+  ohiot1dm: Mondrian higher at 7 of 7 GARCH points in range
+    GARCH 50%: width 53, GARCH caught 57.4%, Mondrian at same width 57.5% (+0.1 pts)
+    GARCH 60%: width 66, GARCH caught 67.0%, Mondrian at same width 67.3% (+0.3 pts)
+    GARCH 70%: width 81, GARCH caught 75.8%, Mondrian at same width 76.1% (+0.3 pts)
+    GARCH 80%: width 99, GARCH caught 83.2%, Mondrian at same width 84.6% (+1.4 pts)
+    GARCH 85%: width 111, GARCH caught 86.2%, Mondrian at same width 88.1% (+1.8 pts)
+    GARCH 90%: width 126, GARCH caught 89.8%, Mondrian at same width 91.5% (+1.7 pts)
+    GARCH 95%: width 147, GARCH caught 93.6%, Mondrian at same width 95.0% (+1.4 pts)
+    interval score at 80% (lower is better): GARCH 138, plain conformal 133, CQR 130, situation (Mondrian) 131, situation x GARCH 135
+    interval score at 95% (lower is better): GARCH 205, plain conformal 197, CQR 189, situation (Mondrian) 191, situation x GARCH 202
+  azt1d: Mondrian higher at 6 of 6 GARCH points in range
+    GARCH 50%: width 44, GARCH caught 56.5%, Mondrian at same width 56.6% (+0.1 pts)
+    GARCH 60%: width 55, GARCH caught 66.1%, Mondrian at same width 66.3% (+0.2 pts)
+    GARCH 70%: width 67, GARCH caught 74.8%, Mondrian at same width 74.9% (+0.1 pts)
+    GARCH 80%: width 83, GARCH caught 82.3%, Mondrian at same width 83.3% (+1.0 pts)
+    GARCH 85%: width 93, GARCH caught 85.9%, Mondrian at same width 87.0% (+1.0 pts)
+    GARCH 90%: width 106, GARCH caught 89.4%, Mondrian at same width 90.4% (+1.0 pts)
+    interval score at 80% (lower is better): GARCH 117, plain conformal 117, CQR 111, situation (Mondrian) 114, situation x GARCH 116
+    interval score at 95% (lower is better): GARCH 177, plain conformal 172, CQR 161, situation (Mondrian) 164, situation x GARCH 174
