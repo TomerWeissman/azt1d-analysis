@@ -112,6 +112,8 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [scripts/hybrid_by_clarke_zone.py](scripts/hybrid_by_clarke_zone.py) | H38: catch rate per Clarke zone, GARCH vs situation vs combined | current |
 | [results/verdict_h38.txt](results/verdict_h38.txt) | H38 verdict and per-zone numbers | current |
 | [figures/h38_zone_catch.png](figures/h38_zone_catch.png) | H38: share caught per Clarke zone, three methods, two datasets | current |
+| [scripts/presentation_figure.py](scripts/presentation_figure.py) | Presentation figure: strength of situation-aware bands in plain terms | current |
+| [figures/presentation_situation_aware.png](figures/presentation_situation_aware.png) | Presentation figure: per-situation catch rates and four everyday situations (OhioT1DM), with the zone D trade-off in the footnote | current |
 | README.md | This page | current |
 
 ## Remember
