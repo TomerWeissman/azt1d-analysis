@@ -32,11 +32,14 @@ Statuses:
 | H15 | Evidential regression is better calibrated than a deep ensemble for glucose forecasting. | 28_9 | Supported | Mean calibration error 0.064 vs 0.094 at 0 days, and 0.065 vs 0.091 at 7 days. Five patients, one seed. | More patients and seeds. |
 | H16 | Patient 27's GARCH bands are under-confident. | 28_9 | Confirmed | Coverage 69%, 86%, and 92% at nominal 55%, 80%, and 90%. One patient. | Check on other patients. |
 | H17 | Personalized uncertainty training improves over time for each patient (Direction 2). | 28_9 | Testing | Covered by H13 and H14, which are preliminary and negative so far. | Decide the direction with Prof. Watson. |
-| H18 | Teacher forcing separates epistemic from aleatoric error in recurrent forecasting. | 5_10 | Not yet tested | Planned for week 5_10 in the Notion sprint plan. | Set up the smallest run in week 5_10. |
+| H18 | The ensemble's disagreement variance is epistemic: it shrinks as training data grows, while the predicted noise variance (aleatoric) does not. | 5_10 | Testing | Learning curve on the pretraining pool, 3 members, held-out source windows. | Result in [5_10 README](5_10/README.md). |
+| H20 | The ensemble's epistemic variance is higher on windows from unseen patients than on familiar ones. Aleatoric is about the same. | 5_10 | Testing | Same models: held-out source windows vs windows from the five unseen target patients. | Same run as H18. |
+| H21 | Free-running error grows faster than teacher-forced error over the horizon. The gap is compounding, not epistemic. | 5_10 | Not yet tested (optional) | Would use the recursive model from week 14_9. | Only after H18 and H20. |
 | H19 | Sizing the two band edges separately (wide bottom, narrow top) cuts false alarms without losing danger caught. | 21_9 | Not yet tested | Suggested as a next step in 21_9, not run. | Compare separate edge sizes at matched false-trigger rates. |
 
 ## Testing now
 
-- **H17 (Direction 2, personalization)**: preliminary and negative so far (H13, H14). The most reproducible signal is the evidential epistemic spike at 1 day, seen in all 5 patients.
-- **H12 (Direction 1, width vs volatility)**: supported, but the journal notes it may not be valuable. Decide with Prof. Watson whether to pursue it.
-- **H18 (teacher forcing)**: planned for week 5_10.
+- **H18 and H20 (what is epistemic):** learning curve and unseen-patient test, planned in week 5_10. Pre-registered rule: epistemic is supported if it falls by at least 20% from the smallest to the largest training set and aleatoric moves by less than 10%.
+- **H17 (Direction 2, personalization):** preliminary and negative so far (H13, H14). Direction decision pending with Prof. Watson.
+- **H12 (Direction 1, width vs volatility):** supported, but may not be valuable. Same decision.
+- **H21 (teacher forcing):** optional diagnostic, only after H18 and H20.
