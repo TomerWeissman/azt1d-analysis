@@ -210,3 +210,11 @@ commits: pending (this week's commit); pre-registration pushed before the run
 runtime: about 1 min
 outcome: H31 supported narrowly. OhioT1DM: hybrid 3.1 vs situation 4.0 vs GARCH 6.7 points from target (21% better than situation), 7 of 12 patients better (the rule's minimum). AZT1D: 3.1 vs 3.8 vs 6.0, 14 of 25 better.
 notes: first run had no sensor-range clipping, so bands went below 0. Rerun with clipping to 40-400 mg/dL, as every earlier band; verdict unchanged. OhioT1DM is the same data as H28, so this is not a second fresh dataset.
+
+## 2026-10-04 | 5_10 | Literature check: Mondrian conformal prediction
+type: research
+status: done
+files: work/5_10/docs/literature_review_uncertainty.md
+commits: pending (this week's commit)
+outcome: situation-only bands are Mondrian conformal prediction; the hybrid is normalized conformal inside Mondrian groups. Neither method is new. No glucose/CGM paper found using group-conditional conformal calibration or measuring band coverage by level and trend. Paper contribution reframed as the application and finding, not the method.
+notes: abstracts and summaries only. Paper must cite Mondrian and normalized conformal, and compare against plain conformal and CQR.

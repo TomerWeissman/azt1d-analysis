@@ -47,3 +47,22 @@ Uncertainty for glucose forecasting is an active field, but most of it asks "is 
 
 - The FedPhysio-Adapter claim and the EVIDENT details come from summaries, not full texts. Check them before citing.
 - I didn't search for medical-device or regulatory work (for example ISO 15197 alarm standards), which may define acceptable false-alarm rates. That's the next search.
+
+## Addendum (Oct 4): Mondrian conformal prediction, and what it means for novelty
+
+**The method is not new.**
+- Our "situation-only" band is **Mondrian conformal prediction**: partition the data into groups with a fixed rule, then run split conformal inside each group. It guarantees coverage within each group, not just on average ([MAPIE docs on Mondrian](https://mapie.readthedocs.io/en/v0.9.0/theoretical_description_mondrian.html); [Vovk, conditional validity of inductive conformal predictors](https://www.researchgate.net/publication/230996365_Conditional_validity_of_inductive_conformal_predictors); [Conformal Prediction With Conditional Guarantees, arXiv:2305.12616](https://arxiv.org/pdf/2305.12616)).
+- Our "GARCH x situation" band is **normalized conformal prediction inside Mondrian groups**: errors divided by a noise estimate (here, GARCH's error size) before calibrating. Normalized conformal for heteroscedastic data is standard ([Conditional validity of heteroskedastic conformal regression](https://www.researchgate.net/publication/391703798_Conditional_validity_of_heteroskedastic_conformal_regression); [CQR, Romano et al. 2019](https://arxiv.org/pdf/1905.03222)). Using GARCH as the noise estimate is a choice, not a new method.
+- Known weakness, which we saw: per-group quantiles become unstable when a group has few calibration samples (two of our 25 situations fell back to the pooled width).
+
+**Not found: application to glucose forecasting.**
+- No glucose or CGM paper found that uses Mondrian or group-conditional conformal calibration, or that measures band coverage by glucose level and trend. Glucose papers stratify *point accuracy* by glycemic range (for example GlyRAG's range-stratified error grid, [arXiv:2601.05353](https://arxiv.org/html/2601.05353)), not band coverage.
+- Checked and ruled out: SSM-CGM ([arXiv:2510.04386](https://arxiv.org/html/2510.04386), abstract only; no group-conditional calibration mentioned) and CASCADE ([arXiv:2605.20468](https://arxiv.org/pdf/2605.20468), Parkinson's dosing, not glucose).
+- Limits: abstracts and search summaries only; not exhaustive.
+
+**What this means for a paper.** The contribution is not the method. It is:
+1. The finding that standard glucose uncertainty bands (GARCH, plain conformal) are miscalibrated in specific, clinically meaningful situations (for example 64% coverage during fast rises from 70 to 120).
+2. Showing that Mondrian conformal with clinically meaningful groups (level by trend) fixes it, on two datasets, with narrower bands than GARCH.
+3. The GARCH-normalized Mondrian variant as the best-calibrated option.
+
+Required in the paper: cite Mondrian and normalized conformal as the methods, describe them as such, and compare against plain conformal and conformalized quantile regression.

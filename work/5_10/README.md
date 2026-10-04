@@ -86,6 +86,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | README.md | This page | current |
 
 ## Remember
+- The situation-specific band is Mondrian conformal prediction, and the hybrid is normalized conformal inside Mondrian groups. Name them that way. The novelty is applying them to glucose and the miscalibration finding, not the method.
 - The fine-tuning baseline used five target patients and one seed. Any new result should be read against that.
 - Ensemble disagreement was about 1.6 mg/dL last week. With three members, variance estimates are noisy. Expect large error bars.
 - Teacher forcing does not separate epistemic from aleatoric uncertainty by itself. It is kept only as the optional H21 diagnostic.
