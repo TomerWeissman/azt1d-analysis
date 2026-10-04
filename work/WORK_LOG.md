@@ -156,3 +156,12 @@ files: work/5_10/docs/literature_review_uncertainty.md, work/5_10/README.md
 commits: pending (this week's commit)
 outcome: seven gaps. Not found in the literature: alarms built from bands per patient (G1), confidence over a new patient's data (G2), a glucose method comparison of epistemic labels (G3), a noise ceiling for 60-minute forecasts (G4), conformal 60-minute CGM forecasts (G6). Partly found: width tracking error (G5), sensor error in a ceiling (G7). Position paper (arXiv 2505.23506) supports the method disagreement we found.
 notes: most sources read from abstracts and search summaries. Several full texts did not open (ScienceDirect 403, some arXiv PDFs unparsed). Verify before citing. Not yet searched: medical-device alarm standards (ISO 15197) that define acceptable false-alarm rates.
+
+## 2026-10-04 | 5_10 | Cheap tests H23, H24, H25 (look-alike noise bound, band alarms, conformal coverage)
+type: experiment
+status: done
+files: work/5_10/scripts/cheap_tests_h23_h25.py, work/5_10/results/h23_lookalike.txt, work/5_10/results/h24_alarms.csv, work/5_10/results/h25_conformal_coverage.csv, work/5_10/results/verdicts_h23_h25.txt, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit)
+runtime: 44 s
+outcome: H23 inconclusive (look-alike upper bound 106% of model error). H24 not supported (band alarm 10.2 onsets/day vs point 7.7; test sensitivity 0.73 vs 0.67). H25 not supported (16 of 25 patients inside 75% to 85%; median 79.1%).
+notes: the first H24 run had a bug (tuned on test-period bands). Fixed before the reported run: thresholds now tuned on validation bands only. Caveat for H24: validation bands are in-sample for their own tuning, so tuned sensitivity is approximate.

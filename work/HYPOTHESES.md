@@ -8,6 +8,7 @@ Statuses:
 - **Supported**: the evidence points that way, but the test is preliminary.
 - **Not supported**: the test was run and did not show the effect.
 - **Invalidated**: the test showed it is false, or a bug explained the earlier result.
+- **Inconclusive**: the test ran, but the result can't settle the claim.
 - **Not yet tested**: planned, not run.
 - **Dropped**: no longer pursued.
 
@@ -36,6 +37,9 @@ Statuses:
 | H20 | The ensemble's epistemic variance is higher on windows from unseen patients than on familiar ones. Aleatoric is about the same. | 5_10 | Testing | Same models: held-out source windows vs windows from the five unseen target patients. | Same run as H18. |
 | H21 | Free-running error grows faster than teacher-forced error over the horizon. The gap is compounding, not epistemic. | 5_10 | Not yet tested (optional) | Would use the recursive model from week 14_9. | Only after H18 and H20. |
 | H19 | Sizing the two band edges separately (wide bottom, narrow top) cuts false alarms without losing danger caught. | 21_9 | Not yet tested | Suggested as a next step in 21_9, not run. | Compare separate edge sizes at matched false-trigger rates. |
+| H23 | At least 25% of the current 60-minute error is reducible by better models. Equivalently, noise is at most 75% of the error. | 5_10 | Inconclusive | Look-alike windows (nearly identical inputs, at least 1 hour apart) give an upper bound on noise. Supported if the bound is at most 75% of the model's error. Inconclusive otherwise. | Result in [5_10 README](5_10/README.md). |
+| H24 | A band-based alarm at 90% sensitivity needs at least 20% fewer false alarms per day than a point-forecast threshold tuned the same way. | 5_10 | Not supported | Thresholds tuned on validation data, scored on test data, for all 25 patients. Supported if the band alarm has at least 20% fewer false-alarm onsets per day, with both sensitivities at least 85%. | Result in [5_10 README](5_10/README.md). |
+| H25 | Conformal 80% bands cover 75% to 85% of unseen readings for at least 20 of the 25 patients. | 5_10 | Not supported | Conformal bands built on each patient's validation period, scored on the test period. Supported if the count is at least 20. | Result in [5_10 README](5_10/README.md). |
 
 ## Testing now
 

@@ -1,0 +1,18 @@
+H23 (at least 25% of error reducible, i.e. noise at most 75%): INCONCLUSIVE (the bound is above 75%, so nothing is shown)
+  look-alike pairs used: 4,000 (same-patient pairs within 1 hour excluded)
+  model mean squared error (pooled test): 1030.4 mg2/dL2 (RMSE 32.1)
+  noise variance upper bound (half the mean squared pair difference): 1092.6 mg2/dL2
+  upper bound as a share of model error: 106% (rule: at most 75%)
+  caveat: neighbours still differ in inputs, so this is an upper bound on noise, not the noise itself
+
+H24 (band alarm needs at least 20% fewer false alarms per day at 90% sensitivity): NOT SUPPORTED
+  patients with validation lows: 21 of 25
+  pooled alarm onsets per day: point 7.698, band 10.248, band saving -33.1%
+  mean sensitivity on test: point 0.67, band 0.73
+  patients where the band alarm has fewer onsets: 4 of 21
+  caveat: sensitivity on validation is noisy when lows are rare, and the test numbers vary with it
+
+H25 (conformal 80% coverage between 75% and 85% for at least 20 of 25 patients): NOT SUPPORTED
+  patients inside 75% to 85%: 16 of 25
+  coverage range across patients: 64.6% to 86.8%
+  median coverage: 79.1%

@@ -1,0 +1,6 @@
+H23 (at least 25% of error reducible, i.e. noise at most 75%): INCONCLUSIVE (the bound is above 75%, so nothing is shown)
+  look-alike pairs used: 4,000 (same-patient pairs within 1 hour excluded)
+  model mean squared error (pooled test): 1030.4 mg2/dL2 (RMSE 32.1)
+  noise variance upper bound (half the mean squared pair difference): 1092.6 mg2/dL2
+  upper bound as a share of model error: 106% (rule: at most 75%)
+  caveat: neighbours still differ in inputs, so this is an upper bound on noise, not the noise itself
