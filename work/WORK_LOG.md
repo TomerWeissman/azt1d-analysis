@@ -140,3 +140,19 @@ commits: 25763df (the seed-fix notebooks 02, 05, 06, 07 are not in it)
 outcome: every notebook and script moved out of notebooks/, notebooks_2/, notebooks_3/, scripts/, results/, figures/. src/azt1d stays shared.
 notes: path map. notebooks/01, 02 -> 7_9/notebooks/. notebooks/03, 04, 05, 06, 07, 08 -> 14_9/notebooks/. notebooks_2/01, 02 -> 21_9/notebooks/. notebooks_2/03, 04 and notebooks_3/01 -> 28_9/notebooks/. scripts/build_summary_notebook.py and build_recursive_notebook.py -> 14_9/scripts/. scripts/build_uncertainty_notebook.py and build_one_patient_notebook.py -> 21_9/scripts/. build_interval_utility, build_method_comparison, build_hupa, train_hupa_patient, run_finetune -> 28_9/scripts/. capstone_paper_draft.md/.html -> 21_9/docs/. results/quick_metrics.csv -> 28_9/results/. figures/quick_results.png -> 28_9/figures/. Earlier entries keep their original paths; use this map to find them.
 notes: verified. All 13 notebooks resolve the repo root from their new folders. notebooks 01 (7_9) and 03 (28_9) were executed end to end from their new folders with no cell errors. Outputs went to the scratch folder, not the committed notebooks. Uncommitted: 7_9/notebooks/02, 14_9/notebooks/05, 06, 07 (seed-fix changes). The old copies of those four are still in git history at their old paths.
+
+## 2026-10-04 | 5_10 | Week start: goals and carry-forward
+type: docs
+status: done
+files: work/5_10/README.md, work/5_10/results/quick_metrics.csv, work/5_10/figures/quick_results.png, work/HYPOTHESES.md, work/OVERVIEW.md
+commits: pending (this week's start commit)
+outcome: started week 5_10 a day early at the user's request. Chose the learning-curve and unseen-patient test to find which uncertainty is epistemic. Carried forward the fine-tuning results (copies; originals stay in 28_9). Overview sentence corrected: the teacher-forcing claim was reframed.
+notes: teacher forcing does not separate epistemic from aleatoric on its own. It is kept as an optional diagnostic (H21). Test needs approval for run time before the full run.
+
+## 2026-10-04 | 5_10 | Literature review: uncertainty in glucose forecasting, and gaps
+type: research
+status: done
+files: work/5_10/docs/literature_review_uncertainty.md, work/5_10/README.md
+commits: pending (this week's commit)
+outcome: seven gaps. Not found in the literature: alarms built from bands per patient (G1), confidence over a new patient's data (G2), a glucose method comparison of epistemic labels (G3), a noise ceiling for 60-minute forecasts (G4), conformal 60-minute CGM forecasts (G6). Partly found: width tracking error (G5), sensor error in a ceiling (G7). Position paper (arXiv 2505.23506) supports the method disagreement we found.
+notes: most sources read from abstracts and search summaries. Several full texts did not open (ScienceDirect 403, some arXiv PDFs unparsed). Verify before citing. Not yet searched: medical-device alarm standards (ISO 15197) that define acceptable false-alarm rates.
