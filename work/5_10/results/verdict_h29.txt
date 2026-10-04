@@ -1,0 +1,6 @@
+H29 (error grows from validation to test): NOT SUPPORTED
+  median ratio test/validation RMSE: 1.03 (rule: at least 1.10)
+  patients with ratio at least 1.10: 8 of 25 (rule: at least 15); patients with lower test error: 11
+  ratio range: 0.81 to 1.45
+  median RMSE by period: validation 29.4, test first half 30.8, test second half 30.0 mg/dL
+  correlation between change in glucose variability and change in error (log scale): 0.77

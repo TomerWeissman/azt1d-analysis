@@ -1,0 +1,6 @@
+H28 (situation bands beat GARCH on fresh data, OhioT1DM): SUPPORTED
+  pooled coverage error: GARCH 6.7 points, situation-specific 3.9 points, cut 41% (rule: at least 20%)
+  situations scored (at least 30 test windows): 24; situations on pooled width: 2
+  patients where situation-specific is closer to 80%: 9 of 12 (rule: at least 7)
+  overall coverage: GARCH 83.2%, situation-specific 79.4%
+  mean band width: GARCH 99.3, situation-specific 87.0 mg/dL (not part of the rule)

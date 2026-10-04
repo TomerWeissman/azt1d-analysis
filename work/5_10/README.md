@@ -11,6 +11,8 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H25, not supported**: conformal 80% bands are roughly right on median (79%) but not for every patient.
 - **H26, not supported**: the noise share of error does not differ twofold between glucose situations (the look-alike bounds are too loose to separate them).
 - **H27, not supported (narrowly)**: situation-specific widths put 18 of 25 situations at 75% to 85% coverage. The rule needed 20. Current GARCH bands: 13 of 25.
+- **H28, supported**: on fresh data (OhioT1DM), situation-specific bands cut the distance from the 80% target by 41% vs GARCH (6.7 to 3.9 points), closer for 9 of 12 patients, and 12% narrower (87 vs 99 mg/dL).
+- **H29, not supported**: the model does not get worse over time on average (median test/validation error 1.03). Per-patient shifts (0.81 to 1.45) track changes in glucose variability (correlation 0.77).
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -19,6 +21,8 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 3. Prepare slides for the Thursday Oct 8 meeting with Volkan.
 
 ## Findings
+- Situation-specific bands hold up on a dataset they never touched (H28). This is the week's main confirmed result.
+- Earlier 'drift' was a misreading: errors move with each patient's glucose variability in the later period, not with time itself (H29).
 - Situation-specific widths narrow the coverage spread from 31 points to 16 points. More situations land near 80%, but the rule missed by two.
 - The remaining misses are high-glucose slow falls and flat readings (67% to 69%). Their validation errors were smaller than their test errors, which is drift.
 - Error depends strongly on the situation. Steady readings between 70 and 180 have RMSE about 26 mg/dL. Rapid rises above 250 reach 61 mg/dL.
@@ -31,6 +35,8 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - Conformal is right on median (79%), but coverage ranges from 65% to 87% across patients. The promise holds on average, not per patient.
 
 ## Outcomes
+- H28 (OhioT1DM): coverage error GARCH 6.7, situation-specific 3.9 points (41% cut). 9 of 12 patients closer. Overall coverage GARCH 83.2%, new 79.4%. Mean width 99.3 vs 87.0 mg/dL. Worse for patients 570, 540, 552 and situations 250+ flat and under 70 fast fall.
+- H29 (AZT1D): median ratio 1.03; 8 of 25 at least 10% worse; 11 better; range 0.81 to 1.45; median RMSE validation 29.4, test halves 30.8 and 30.0.
 - H27: situation-specific 18 of 25 inside 75% to 85%, coverage range 67% to 83%. GARCH on the same windows: 13 of 25, range 64% to 95%. Two situations fell back to the pooled width.
 - H26: lowest noise bound 78% (70 to 120, flat, n=9,126). Highest 118% (180 to 250, flat, n=2,839). Rule: lowest at most half of highest. Not met.
 - H23: upper bound on noise 1093 mg2/dL2, versus model error 1030 mg2/dL2 (106%). Rule: at most 75%.
@@ -60,6 +66,10 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [results/situation_bands.csv](results/situation_bands.csv) | Per-situation widths, coverage, and width ratio | current |
 | [results/verdict_h27.txt](results/verdict_h27.txt) | H27 verdict and counts | current |
 | [figures/situation_bands.png](figures/situation_bands.png) | H27: coverage by situation, both methods | current |
+| [scripts/ohio_situation_bands.py](scripts/ohio_situation_bands.py) | H28: situation bands vs GARCH on OhioT1DM. No training | current |
+| [figures/h28_ohio_situation_bands.png](figures/h28_ohio_situation_bands.png) | H28: distance from 80% target, by situation and by patient | current |
+| [scripts/drift.py](scripts/drift.py) | H29: error by period, and its link to glucose variability | current |
+| [figures/h29_drift.png](figures/h29_drift.png) | H29: validation vs test error per patient; error change vs variability change | current |
 | README.md | This page | current |
 
 ## Remember

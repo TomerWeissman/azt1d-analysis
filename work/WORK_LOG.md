@@ -183,3 +183,12 @@ commits: pending (this week's commit)
 runtime: 40 s
 outcome: H27 not supported (narrowly). Situation-specific widths: 18 of 25 situations inside 75% to 85%, rule needed 20. Current GARCH bands: 13 of 25. Coverage spread narrowed from 64% to 95% to 67% to 83%. Two situations used the pooled width.
 notes: a first run failed on a column-assignment bug, fixed before the reported run. The remaining misses are high-glucose slow falls and flat readings, consistent with validation-to-test drift.
+
+## 2026-10-04 | 5_10 | H28 (OhioT1DM situation bands) and H29 (drift)
+type: experiment
+status: done
+files: work/5_10/scripts/ohio_situation_bands.py, work/5_10/scripts/drift.py, work/5_10/results/h28_ohio_situations.csv, work/5_10/results/h28_ohio_patients.csv, work/5_10/results/verdict_h28.txt, work/5_10/results/h29_drift.csv, work/5_10/results/verdict_h29.txt, work/5_10/figures/h28_ohio_situation_bands.png, work/5_10/figures/h29_drift.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the runs
+runtime: H28 4 s, H29 about 40 s
+outcome: H28 supported: OhioT1DM coverage error 6.7 to 3.9 points (41% cut), 9 of 12 patients closer, bands 12% narrower. H29 not supported: median test/validation RMSE 1.03; per-patient changes track glucose variability (r = 0.77).
+notes: H28 width gain is partly because GARCH over-covers on Ohio (83.2% overall). H29 corrects earlier wording: validation-to-test changes are patient variability, not systematic decay.
