@@ -1,4 +1,7 @@
-# AZT1D Analysis
+# Capstone
+
+The Python package inside is still named `azt1d` (the AZT1D loaders and helpers), so imports stay `from azt1d ...`.
+
 
 Exploratory analysis of the [AZT1D dataset](https://doi.org/10.17632/gk9m674wcx.1)
 (Khamesian et al., 2025, [arXiv:2506.14789](https://arxiv.org/abs/2506.14789)), plus a

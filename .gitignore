@@ -11,8 +11,11 @@ data/hupa_ucm/*
 !data/hupa_ucm/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+!data/processed/checkpoints/
+!data/processed/checkpoints_pre_seedfix_backup_2026-09-15/
 
 .ipynb_checkpoints/
 *.egg-info/
 
-.claude/
+.claude/*
+!.claude/skills/
