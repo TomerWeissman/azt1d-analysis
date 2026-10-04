@@ -9,6 +9,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H23, inconclusive**: noise is at most 75% of the error. The look-alike bound came out at 106%, so it says nothing.
 - **H24, not supported**: band alarms do not beat a tuned threshold.
 - **H25, not supported**: conformal 80% bands are roughly right on median (79%) but not for every patient.
+- **H26, not supported**: the noise share of error does not differ twofold between glucose situations (the look-alike bounds are too loose to separate them).
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -17,12 +18,17 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 3. Prepare slides for the Thursday Oct 8 meeting with Volkan.
 
 ## Findings
+- Error depends strongly on the situation. Steady readings between 70 and 180 have RMSE about 26 mg/dL. Rapid rises above 250 reach 61 mg/dL.
+- Band coverage varies by situation: from 64% (70 to 120, fast rise) to 95% (under 70, fast fall). The 80% bands are roughly right on average, but not in every situation.
+- Look-alike noise bounds are 78% to 118% of the model's error in every scored cell. They are too loose to say which situations are mostly noise.
+- Literature check: region-based error grids and state-switching models exist. I found no paper that splits each region's error into noise and reducible parts. Two papers did not open.
 - Look-alike windows still differ too much to bound the noise. With many inputs, true look-alikes are rare.
 - A tuned point threshold beats the band alarm. The band alarm fires about a third more often (10.2 vs 7.7 onsets per day).
 - Thresholds tuned to 90% sensitivity on validation reach only 67% to 73% on test. The validation and test periods differ.
 - Conformal is right on median (79%), but coverage ranges from 65% to 87% across patients. The promise holds on average, not per patient.
 
 ## Outcomes
+- H26: lowest noise bound 78% (70 to 120, flat, n=9,126). Highest 118% (180 to 250, flat, n=2,839). Rule: lowest at most half of highest. Not met.
 - H23: upper bound on noise 1093 mg2/dL2, versus model error 1030 mg2/dL2 (106%). Rule: at most 75%.
 - H24: band 10.2 onsets/day, point 7.7 onsets/day. Sensitivity on test: band 0.73, point 0.67.
 - H25: 16 of 25 patients inside 75% to 85%. Median 79.1%. Range 64.6% to 86.8%.
@@ -43,6 +49,9 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [figures/h23_lookalike.png](figures/h23_lookalike.png) | H23: outcome gaps between look-alike windows, and the noise bound against model error | current |
 | [figures/h24_alarms.png](figures/h24_alarms.png) | H24: alarms per day per patient, band vs point; pooled sensitivity | current |
 | [figures/h25_conformal_coverage.png](figures/h25_conformal_coverage.png) | H25: per-patient coverage of conformal 80% bands | current |
+| [scripts/predictability_map.py](scripts/predictability_map.py) | H26: predictability map of 25 glucose situations (level by 30-minute trend). No training | current |
+| [results/predictability_map.csv](results/predictability_map.csv) | Per-situation RMSE, band coverage, width, and noise bounds | current |
+| [figures/predictability_map.png](figures/predictability_map.png) | H26 heatmaps: model error and noise bound by situation | current |
 | README.md | This page | current |
 
 ## Remember

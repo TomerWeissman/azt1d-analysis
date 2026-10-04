@@ -165,3 +165,12 @@ commits: pending (this week's commit)
 runtime: 44 s
 outcome: H23 inconclusive (look-alike upper bound 106% of model error). H24 not supported (band alarm 10.2 onsets/day vs point 7.7; test sensitivity 0.73 vs 0.67). H25 not supported (16 of 25 patients inside 75% to 85%; median 79.1%).
 notes: the first H24 run had a bug (tuned on test-period bands). Fixed before the reported run: thresholds now tuned on validation bands only. Caveat for H24: validation bands are in-sample for their own tuning, so tuned sensitivity is approximate.
+
+## 2026-10-04 | 5_10 | Literature check and predictability map (H26)
+type: experiment
+status: done
+files: work/5_10/scripts/predictability_map.py, work/5_10/results/predictability_map.csv, work/5_10/results/verdict_h26.txt, work/5_10/figures/predictability_map.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit)
+runtime: 41 s
+outcome: H26 not supported. Look-alike noise bounds are 78% to 118% of model error across situations, too loose to separate. Error varies strongly by situation (RMSE 26 mg/dL steady, 61 mg/dL fast rise above 250). 80% band coverage varies from 64% to 95% by situation.
+notes: literature check found region-based error grids (CG-EGA) and state-switching models, but no per-region noise decomposition. Two key papers did not open (state-switching preprint: title only; CG-EGA: 403). Verify before claiming novelty.

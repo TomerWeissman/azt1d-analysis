@@ -1,0 +1,5 @@
+H26 (noise share differs at least twofold between situations): NOT SUPPORTED
+  scored cells: 21 of 25
+  lowest noise upper bound: 78% (70 to 120, flat, n=9126)
+  highest noise upper bound: 118% (180 to 250, flat, n=2839)
+  rule: lowest at most half the highest. Upper bounds only: a low bound is real evidence of low noise, a high bound is not evidence of high noise.
