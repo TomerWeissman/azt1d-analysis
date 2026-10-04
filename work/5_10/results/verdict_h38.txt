@@ -1,0 +1,9 @@
+H38 (combined band recovers zone D catch within 5 points of GARCH, keeps situation honesty): NOT SUPPORTED
+  OhioT1DM: zone D caught GARCH 62%, situation 41%, combined 54% (gap to GARCH -8 pts); per-situation error GARCH 6.7, combined 3.1 pts -> fails the rule
+  AZT1D: zone D caught GARCH 39%, situation 22%, combined 34% (gap to GARCH -5 pts); per-situation error GARCH 6.0, combined 3.1 pts -> fails the rule
+  OhioT1DM zone A (n=21,836): GARCH caught 96% width 96, situation caught 98% width 87, situation x GARCH caught 94% width 87
+  OhioT1DM zone B (n=10,039): GARCH caught 59% width 104, situation caught 44% width 86, situation x GARCH caught 52% width 94
+  OhioT1DM zone D (n=1,214): GARCH caught 62% width 105, situation caught 41% width 86, situation x GARCH caught 54% width 92
+  AZT1D zone A (n=40,777): GARCH caught 96% width 80, situation caught 98% width 70, situation x GARCH caught 95% width 73
+  AZT1D zone B (n=17,773): GARCH caught 55% width 89, situation caught 35% width 72, situation x GARCH caught 49% width 82
+  AZT1D zone D (n=1,420): GARCH caught 39% width 92, situation caught 22% width 76, situation x GARCH caught 34% width 85

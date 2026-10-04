@@ -21,6 +21,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H35, supported**: Mondrian-vs-GARCH gain 90% interval 0.3 to 3.6 points. Hybrid-vs-Mondrian interval -0.5 to 2.1 includes zero: the hybrid's extra gain is not robust.
 - **H36, supported (by the rule; not robust on OhioT1DM)**: situation bands 19% better calibrated than tuned full-window CQR on OhioT1DM (4.0 vs 4.9 points), and narrower (87 vs 94). Patient-bootstrap interval -0.7 to 2.4 crosses zero. On AZT1D clearly better (3.8 vs 8.9; interval 2.4 to 6.1).
 - **H37, supported by the rule, but the effect is small**: at the same width, situation bands catch 0.1 to 1.8 more points than GARCH at every level, on both datasets. All methods' curves nearly overlap. On interval score, CQR is best on both datasets, situation bands close second.
+- **H38, not supported**: the combined band recovers most but not all of GARCH's zone D catch rate. OhioT1DM: GARCH 62%, situation 41%, combined 54% (8 points short). AZT1D: 39%, 22%, 34% (5 points short, just outside the rule).
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -108,6 +109,9 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [scripts/bands_by_clarke_zone.py](scripts/bands_by_clarke_zone.py) | Band width and share caught per Clarke zone, situation vs GARCH. Descriptive | current |
 | [results/bands_by_clarke_zone.csv](results/bands_by_clarke_zone.csv) | Per-zone counts, widths, catch rates | current |
 | [figures/bands_by_clarke_zone.png](figures/bands_by_clarke_zone.png) | Clarke grid coloured by band width, and per-zone bars | current |
+| [scripts/hybrid_by_clarke_zone.py](scripts/hybrid_by_clarke_zone.py) | H38: catch rate per Clarke zone, GARCH vs situation vs combined | current |
+| [results/verdict_h38.txt](results/verdict_h38.txt) | H38 verdict and per-zone numbers | current |
+| [figures/h38_zone_catch.png](figures/h38_zone_catch.png) | H38: share caught per Clarke zone, three methods, two datasets | current |
 | README.md | This page | current |
 
 ## Remember

@@ -253,3 +253,12 @@ files: work/5_10/scripts/bands_by_clarke_zone.py, work/5_10/results/bands_by_cla
 commits: pending (this week's commit)
 outcome: situation band width is nearly flat across Clarke zones (OhioT1DM A 87, B 86, D 86 mg/dL) while GARCH widens in B, C, D. Caught in zone D: situation 41% vs GARCH 62% (OhioT1DM), 22% vs 39% (AZT1D). Zone A: 98% vs 96%.
 notes: important caveat for the paper. Clarke zone depends on the realised error, which no band can know in advance; GARCH partly tracks it through recent errors.
+
+## 2026-10-04 | 5_10 | Combined band and Clarke zone D (H38)
+type: experiment
+status: done
+files: work/5_10/scripts/hybrid_by_clarke_zone.py, work/5_10/results/h38_zone_catch.csv, work/5_10/results/verdict_h38.txt, work/5_10/figures/h38_zone_catch.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the run
+runtime: about 1.5 min
+outcome: H38 not supported. Zone D caught: OhioT1DM GARCH 62%, situation 41%, combined 54% (-8 vs GARCH); AZT1D 39%, 22%, 34% (-5, just outside the rule). Combined recovers about 60-70% of the gap. Per-situation error stays 3.1 vs GARCH 6.0-6.7.
+notes: clear trade-off. GARCH is best on dangerous misses, situation bands best on per-situation honesty, the combined band sits between on both. Zones C and E omitted (too few points).
