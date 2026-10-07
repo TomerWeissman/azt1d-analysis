@@ -1,0 +1,4 @@
+HUPA-UCM teacher-forcing encoder-decoder, 7 inputs vs 4 inputs (teacher-forced next-hour error, test windows)
+  7 inputs: 5.8 mg/dL with the bottleneck, 17.1 with it zeroed
+  4 inputs: 6.1 mg/dL with the bottleneck, 19.9 with it zeroed
+  runtime 24s (one seed; small differences may be noise)

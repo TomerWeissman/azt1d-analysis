@@ -143,6 +143,9 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [figures/h43_learned_situation.png](figures/h43_learned_situation.png) | H43: per-situation error, interval score, zone D catch for four methods, two datasets | current |
 | [scripts/tsne_hupa_variables.py](scripts/tsne_hupa_variables.py) | Quick look: HUPA-UCM t-SNE coloured by every recorded variable | current |
 | [figures/tsne_hupa_variables.png](figures/tsne_hupa_variables.png) | HUPA-UCM t-SNE coloured by glucose, basal, bolus, carbs, heart rate, steps, calories, time of day | current |
+| [scripts/tsne_hupa_all_inputs.py](scripts/tsne_hupa_all_inputs.py) | Quick look: HUPA-UCM encoder with all 7 recorded variables as inputs, t-SNE coloured by each | current |
+| [results/hupa_all_inputs_summary.txt](results/hupa_all_inputs_summary.txt) | 7-input vs 4-input decoder error | current |
+| [figures/tsne_hupa_all_inputs.png](figures/tsne_hupa_all_inputs.png) | HUPA-UCM t-SNE with all 7 inputs, coloured by each variable and time of day | current |
 | README.md | This page | current |
 
 ## Remember

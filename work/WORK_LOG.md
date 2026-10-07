@@ -342,3 +342,12 @@ commits: pending (this week's commit)
 runtime: 41 s
 outcome: glucose shows the smooth gradient seen before. Basal insulin shows clear regions (near-zero strand at top, a mid-basal mass, a high-basal strand at bottom); basal is largely set per patient (pump settings, or none recorded), so it acts as a second organizing factor tied to therapy setup. Bolus and carbs (mostly zero) show no clear structure. Heart rate, steps, calories and time of day (not encoder inputs) show no clear structure.
 notes: visual only. Raw rows checked aligned with encoded windows (glucose matches). tsne_bottleneck.embed gained an optional return_picks flag (defaults unchanged).
+
+## 2026-10-07 | 5_10 | Quick look: HUPA encoder with all 7 recorded variables as inputs
+type: analysis
+status: done
+files: work/5_10/scripts/tsne_hupa_all_inputs.py, work/5_10/results/hupa_all_inputs_summary.txt, work/5_10/figures/tsne_hupa_all_inputs.png, work/5_10/README.md
+commits: pending (this week's commit)
+runtime: about 1 min
+outcome: with activity inputs, the map has two axes: glucose level (left to right, still the main one) and activity (steps and heart rate high at the top, low at the bottom). Time of day, not an input, follows the activity axis (night hours at the bottom). Basal is less dominant than in the 4-input map. Teacher-forced next-hour decoder error 5.8 (7 inputs) vs 6.1 mg/dL (4 inputs), one seed.
+notes: visual; the decoder difference is small and one seed.
