@@ -1,0 +1,16 @@
+H43 (a learned version beats the hand-drawn grid on interval score and zone D, both datasets): NOT SUPPORTED
+  AZT1D, learned groups (k-means): interval score 114 vs grid 114; zone D caught 22% vs 22%; per-situation error 6.2 vs 3.9 pts -> fails
+  OhioT1DM, learned groups (k-means): interval score 132 vs grid 131; zone D caught 43% vs 41%; per-situation error 5.7 vs 3.9 pts -> fails
+  AZT1D, learned neighbours (kNN): interval score 113 vs grid 114; zone D caught 25% vs 22%; per-situation error 6.3 vs 3.9 pts -> fails
+  OhioT1DM, learned neighbours (kNN): interval score 132 vs grid 131; zone D caught 36% vs 41%; per-situation error 4.9 vs 3.9 pts -> fails
+  AZT1D full table:
+    GARCH: per-situation error 6.0 pts, interval score 117, width 83, overall 82.3%, zone D caught 39% (n=1420), zone A caught 96%
+    hand-drawn grid: per-situation error 3.9 pts, interval score 114, width 71, overall 77.3%, zone D caught 22% (n=1420), zone A caught 98%
+    learned groups (k-means): per-situation error 6.2 pts, interval score 114, width 71, overall 77.3%, zone D caught 22% (n=1420), zone A caught 98%
+    learned neighbours (kNN): per-situation error 6.3 pts, interval score 113, width 68, overall 75.4%, zone D caught 25% (n=1420), zone A caught 97%
+  OhioT1DM full table:
+    GARCH: per-situation error 6.7 pts, interval score 138, width 99, overall 83.2%, zone D caught 62% (n=1214), zone A caught 96%
+    hand-drawn grid: per-situation error 3.9 pts, interval score 131, width 87, overall 79.4%, zone D caught 41% (n=1214), zone A caught 98%
+    learned groups (k-means): per-situation error 5.7 pts, interval score 132, width 87, overall 79.9%, zone D caught 43% (n=1214), zone A caught 99%
+    learned neighbours (kNN): per-situation error 4.9 pts, interval score 132, width 82, overall 76.8%, zone D caught 36% (n=1214), zone A caught 97%
+  runtime 97s

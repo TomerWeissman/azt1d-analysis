@@ -26,6 +26,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H40, not supported**: on HUPA-UCM the bottleneck again mostly encodes glucose level (PC1 vs mean glucose 0.99). Bottleneck position predicts patient CNN-LSTM error no better than mean glucose (LOO 12.8 vs 12.5 mg/dL); glucose SD alone is better (9.8).
 - **H41, not supported (a hint)**: sample entropy adds 9% beyond glucose SD in predicting a patient's CNN-LSTM error (rule 15%); left-over error vs sample entropy Spearman +0.35.
 - **H42, not supported**: bits per step adds nothing beyond glucose SD (LOO error 7% worse).
+- **H43, not supported**: learned situations from the encoder summary tie the hand-drawn grid on interval score (113-114 vs 114 AZT1D; 132 vs 131 OhioT1DM) and dangerous misses (22-25% vs 22%; 36-43% vs 41%), and are worse on per-situation honesty (4.9-6.3 vs 3.9 points).
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -137,6 +138,9 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [figures/tsne_patient_average.png](figures/tsne_patient_average.png) | One dot per patient, coloured by CNN-LSTM error, AZT1D and HUPA-UCM, two seeds | current |
 | [scripts/tsne_situation.py](scripts/tsne_situation.py) | Quick look: window-level t-SNE coloured by situation (level, trend, both) | current |
 | [figures/tsne_situation.png](figures/tsne_situation.png) | t-SNE coloured by current level, 30-minute trend, and full situation, AZT1D and HUPA-UCM | current |
+| [scripts/learned_situation_bands.py](scripts/learned_situation_bands.py) | H43: bands sized by the encoder summary (k-means groups, nearest neighbours) vs the hand-drawn grid | current |
+| [results/verdict_h43.txt](results/verdict_h43.txt) | H43 verdict and full table | current |
+| [figures/h43_learned_situation.png](figures/h43_learned_situation.png) | H43: per-situation error, interval score, zone D catch for four methods, two datasets | current |
 | README.md | This page | current |
 
 ## Remember

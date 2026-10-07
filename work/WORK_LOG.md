@@ -324,3 +324,12 @@ commits: pending (this week's commit)
 runtime: 141 s
 outcome: on both datasets the map splits into regions by current level, and within each region windows are ordered by 30-minute trend (fast rises and fast falls form separate bands). The encoder's structure matches the situation grid.
 notes: visual, not quantified. tsne_bottleneck.embed gained an optional return_prev flag (default unchanged).
+
+## 2026-10-07 | 5_10 | Learned-situation bands from the encoder summary (H43)
+type: experiment
+status: done
+files: work/5_10/scripts/learned_situation_bands.py, work/5_10/results/h43_learned_situation.csv, work/5_10/results/verdict_h43.txt, work/5_10/figures/h43_learned_situation.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the run
+runtime: 97 s
+outcome: H43 not supported. Interval score: AZT1D grid 114, k-means 114, kNN 113; OhioT1DM 131, 132, 132. Zone D caught: AZT1D 22%, 22%, 25%; OhioT1DM 41%, 43%, 36%. Per-situation error: grid 3.9 on both; learned 4.9-6.3.
+notes: per-situation error is measured on the hand-drawn situations, which favours the grid; but the learned versions also fail to gain on the two neutral measures. Encoder trained on first 64% per patient; windows checked aligned with the forecaster. One seed.
