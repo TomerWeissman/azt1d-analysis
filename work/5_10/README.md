@@ -142,7 +142,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - Notion Gantt: Second Reader Meeting is Oct 16. Draft Workshop is Oct 26. Midterm Deliverables are Oct 30.
 
 ## Open
-- Compressibility (H41, H42): glucose variability remains the best simple predictor of how hard a patient is to forecast. Sample entropy is a weak hint worth checking on HUPA-UCM before dropping. Compression-curve version (step 3) not run.
+- **Closed (Oct 6):** the patient-predictability line (autoencoder bottlenecks H39, H40; compressibility H41, H42). No insight beyond glucose variability. Sample entropy hint and compression curve not pursued. Next steps to be discussed with Volkan.
 - Build and run the learning-curve and unseen-patient test (H18, H20). The full run needs approval for run time.
 - Decide the personalization direction with Prof. Watson (H17).
 - Prepare slides for Volkan.

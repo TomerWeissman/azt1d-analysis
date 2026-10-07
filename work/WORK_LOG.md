@@ -289,3 +289,11 @@ commits: pending (this week's commit); pre-registration pushed before the run
 runtime: 72 s
 outcome: both not supported. LOO error predicting patient test RMSE: glucose SD alone 5.61; SD + sample entropy 5.09 (+9%, rule 15%); SD + bits per step 6.03 (-7%). Glucose SD vs RMSE Spearman +0.64.
 notes: measures from the first 80% of each patient, target the last 20%. Bits per step overlaps with SD (Spearman +0.33). Sample entropy is scale-free and partly independent of SD (Spearman -0.57); weak hint only. 25 patients, one seed.
+
+## 2026-10-06 | 5_10 | Decision: close the patient-predictability line
+type: docs
+status: done
+files: work/5_10/README.md
+commits: pending (this week's commit)
+outcome: user decided to stop the autoencoder and compressibility line (H39-H42), which produced no insight beyond glucose variability. Next steps to be discussed with Volkan (meeting Thursday Oct 8).
+notes: situation-aware bands (H27-H38) remain the main result.
