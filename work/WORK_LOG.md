@@ -271,3 +271,12 @@ commits: pending (this week's commit); pre-registration pushed before the full r
 runtime: 69 s (8 epochs, CPU)
 outcome: H39 not supported. Bottleneck is used (decoder error 5.5 vs 11.1 mg/dL with it zeroed) but PC1 is current glucose (Spearman 0.99) and holds 94% of variance; PC2's arc is likely a horseshoe artifact of a curved 1D structure. LOO error predicting patient glucose SD: bottleneck 10.0, mean glucose 7.4 mg/dL.
 notes: a separate cluster at PC2 about -1.35 comes mostly from patient 10's windows; not investigated (possible data artifact). Global scaling used so patient differences are kept. One seed.
+
+## 2026-10-06 | 5_10 | HUPA-UCM plain CNN-LSTM for all patients, and teacher-forcing bottleneck (H40)
+type: experiment
+status: done
+files: work/5_10/scripts/train_hupa_all_v0.py, work/5_10/scripts/hupa_autoencoder.py, data/processed/checkpoints/hupa_ucm_cnn_lstm_v0/, work/5_10/results/verdict_h40.txt, work/5_10/results/hupa_autoencoder_patients.csv, work/5_10/figures/hupa_autoencoder_pca.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the run
+runtime: training 156 s (24 new patients; 27 reused); encoder 10 s
+outcome: HUPA plain CNN-LSTM test RMSE 19.4 to 82.3 mg/dL (patient 6 outlier, 8 days of data). H40 not supported: bottleneck PC1 = mean glucose (0.99), 95% of variance; LOO error predicting patient RMSE: bottleneck 12.8, mean glucose 12.5, glucose SD 9.8 mg/dL.
+notes: these HUPA checkpoints also enable the third dataset for the situation-band study. Training windows capped at 3,000 per patient for the encoder. HUPA filler left in.

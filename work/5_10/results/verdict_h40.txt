@@ -1,0 +1,8 @@
+H40 (HUPA bottleneck predicts patient CNN-LSTM error at least 15% better than mean glucose, LOO): NOT SUPPORTED
+  LOO error predicting forecast RMSE: bottleneck position 12.84, mean glucose 12.46, glucose SD 9.81 mg/dL (bottleneck vs mean glucose -3%)
+  PCA explained variance: PC1 95%, PC2 4%
+  bottleneck check: decoder RMSE 6.1 with bottleneck, 19.9 with it zeroed (mg/dL)
+  patient centroids, Spearman with forecast RMSE: PC1 +0.40, PC2 +0.04, mean glucose +0.38, glucose SD +0.61
+  PC1 vs mean glucose across patients: +0.99
+  forecast RMSE across patients: 19.4 to 82.3 mg/dL
+  runtime 10s

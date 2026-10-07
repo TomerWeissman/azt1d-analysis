@@ -23,6 +23,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H37, supported by the rule, but the effect is small**: at the same width, situation bands catch 0.1 to 1.8 more points than GARCH at every level, on both datasets. All methods' curves nearly overlap. On interval score, CQR is best on both datasets, situation bands close second.
 - **H38, not supported**: the combined band recovers most but not all of GARCH's zone D catch rate. OhioT1DM: GARCH 62%, situation 41%, combined 54% (8 points short). AZT1D: 39%, 22%, 34% (5 points short, just outside the rule).
 - **H39, not supported**: the teacher-forcing bottleneck mostly encodes current glucose (PC1 vs current glucose 0.99, 94% of variance). Predicting a patient's glucose SD from bottleneck position is 35% worse than from mean glucose alone (leave-one-patient-out).
+- **H40, not supported**: on HUPA-UCM the bottleneck again mostly encodes glucose level (PC1 vs mean glucose 0.99). Bottleneck position predicts patient CNN-LSTM error no better than mean glucose (LOO 12.8 vs 12.5 mg/dL); glucose SD alone is better (9.8).
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -118,6 +119,11 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [scripts/teacher_forcing_autoencoder.py](scripts/teacher_forcing_autoencoder.py) | H39: teacher-forcing encoder-decoder, PCA of the bottleneck, patient-level checks | current |
 | [results/autoencoder_summary.txt](results/autoencoder_summary.txt) | H39 verdict, PCA shares, bottleneck check, LOO errors | current |
 | [figures/autoencoder_pca.png](figures/autoencoder_pca.png) | Bottleneck PCA coloured by patient glucose SD and forecast RMSE, plus patient centroids | current |
+| [scripts/train_hupa_all_v0.py](scripts/train_hupa_all_v0.py) | Trains the plain CNN-LSTM for all 25 HUPA-UCM patients (2.5 min) | current |
+| [scripts/hupa_autoencoder.py](scripts/hupa_autoencoder.py) | H40: teacher-forcing encoder-decoder on HUPA-UCM, by patient forecast error | current |
+| [results/verdict_h40.txt](results/verdict_h40.txt) | H40 verdict and numbers | current |
+| [results/hupa_autoencoder_patients.csv](results/hupa_autoencoder_patients.csv) | Per-patient centroid, forecast RMSE, glucose mean and SD | current |
+| [figures/hupa_autoencoder_pca.png](figures/hupa_autoencoder_pca.png) | HUPA-UCM bottleneck PCA, windows and one point per patient, coloured by forecast error | current |
 | README.md | This page | current |
 
 ## Remember
