@@ -280,3 +280,12 @@ commits: pending (this week's commit); pre-registration pushed before the run
 runtime: training 156 s (24 new patients; 27 reused); encoder 10 s
 outcome: HUPA plain CNN-LSTM test RMSE 19.4 to 82.3 mg/dL (patient 6 outlier, 8 days of data). H40 not supported: bottleneck PC1 = mean glucose (0.99), 95% of variance; LOO error predicting patient RMSE: bottleneck 12.8, mean glucose 12.5, glucose SD 9.8 mg/dL.
 notes: these HUPA checkpoints also enable the third dataset for the situation-band study. Training windows capped at 3,000 per patient for the encoder. HUPA filler left in.
+
+## 2026-10-06 | 5_10 | Compressibility vs CNN-LSTM error (H41, H42)
+type: experiment
+status: done
+files: work/5_10/scripts/compressibility.py, work/5_10/results/compressibility_patients.csv, work/5_10/results/verdict_h41_h42.txt, work/5_10/figures/compressibility.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the run
+runtime: 72 s
+outcome: both not supported. LOO error predicting patient test RMSE: glucose SD alone 5.61; SD + sample entropy 5.09 (+9%, rule 15%); SD + bits per step 6.03 (-7%). Glucose SD vs RMSE Spearman +0.64.
+notes: measures from the first 80% of each patient, target the last 20%. Bits per step overlaps with SD (Spearman +0.33). Sample entropy is scale-free and partly independent of SD (Spearman -0.57); weak hint only. 25 patients, one seed.

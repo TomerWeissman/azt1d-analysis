@@ -24,6 +24,8 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H38, not supported**: the combined band recovers most but not all of GARCH's zone D catch rate. OhioT1DM: GARCH 62%, situation 41%, combined 54% (8 points short). AZT1D: 39%, 22%, 34% (5 points short, just outside the rule).
 - **H39, not supported**: the teacher-forcing bottleneck mostly encodes current glucose (PC1 vs current glucose 0.99, 94% of variance). Predicting a patient's glucose SD from bottleneck position is 35% worse than from mean glucose alone (leave-one-patient-out).
 - **H40, not supported**: on HUPA-UCM the bottleneck again mostly encodes glucose level (PC1 vs mean glucose 0.99). Bottleneck position predicts patient CNN-LSTM error no better than mean glucose (LOO 12.8 vs 12.5 mg/dL); glucose SD alone is better (9.8).
+- **H41, not supported (a hint)**: sample entropy adds 9% beyond glucose SD in predicting a patient's CNN-LSTM error (rule 15%); left-over error vs sample entropy Spearman +0.35.
+- **H42, not supported**: bits per step adds nothing beyond glucose SD (LOO error 7% worse).
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -124,6 +126,10 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [results/verdict_h40.txt](results/verdict_h40.txt) | H40 verdict and numbers | current |
 | [results/hupa_autoencoder_patients.csv](results/hupa_autoencoder_patients.csv) | Per-patient centroid, forecast RMSE, glucose mean and SD | current |
 | [figures/hupa_autoencoder_pca.png](figures/hupa_autoencoder_pca.png) | HUPA-UCM bottleneck PCA, windows and one point per patient, coloured by forecast error | current |
+| [scripts/compressibility.py](scripts/compressibility.py) | H41/H42: sample entropy and bits per step vs CNN-LSTM error | current |
+| [results/verdict_h41_h42.txt](results/verdict_h41_h42.txt) | H41/H42 verdicts and numbers | current |
+| [results/compressibility_patients.csv](results/compressibility_patients.csv) | Per-patient SD, sample entropy, bits per step, forecast RMSE | current |
+| [figures/compressibility.png](figures/compressibility.png) | Variability vs error, and error left over vs each compressibility measure | current |
 | README.md | This page | current |
 
 ## Remember
@@ -136,6 +142,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - Notion Gantt: Second Reader Meeting is Oct 16. Draft Workshop is Oct 26. Midterm Deliverables are Oct 30.
 
 ## Open
+- Compressibility (H41, H42): glucose variability remains the best simple predictor of how hard a patient is to forecast. Sample entropy is a weak hint worth checking on HUPA-UCM before dropping. Compression-curve version (step 3) not run.
 - Build and run the learning-curve and unseen-patient test (H18, H20). The full run needs approval for run time.
 - Decide the personalization direction with Prof. Watson (H17).
 - Prepare slides for Volkan.

@@ -1,0 +1,10 @@
+Baseline: glucose SD alone, leave-one-patient-out error 5.61 mg/dL
+H41 (sample entropy adds at least 15% beyond glucose SD): NOT SUPPORTED
+  LOO error: SD alone 5.61, sample entropy alone 6.65, SD + sample entropy 5.09 mg/dL; cut vs SD alone +9%
+  Spearman with forecast RMSE: sample entropy -0.12; sample entropy with glucose SD -0.57
+H42 (bits per step adds at least 15% beyond glucose SD): NOT SUPPORTED
+  LOO error: SD alone 5.61, bits per step alone 6.44, SD + bits per step 6.03 mg/dL; cut vs SD alone -7%
+  Spearman with forecast RMSE: bits per step +0.36; bits per step with glucose SD +0.33
+  Spearman glucose SD with forecast RMSE: +0.64
+  ranges: sample entropy 0.31 to 0.56; bits per step 3.75 to 6.18; forecast RMSE 21.0 to 45.5
+  runtime 72s
