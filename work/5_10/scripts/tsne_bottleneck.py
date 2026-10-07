@@ -48,7 +48,9 @@ def patients(name):
             yield sid, hupa.load_subject(sid, ROOT / hupa.DEFAULT_DIR)
 
 
-def embed(name):
+def embed(name, return_prev: bool = False):
+    """Encode test windows. With return_prev=True also returns each window's glucose 30 minutes
+    (6 steps) before its last reading, for the situation trend."""
     run, cap = DATASETS[name]
     torch.manual_seed(SEED)
     rng = np.random.default_rng(SEED)
@@ -82,12 +84,13 @@ def embed(name):
             loss = ((pred - Yt[i]) ** 2).mean()
             opt.zero_grad(); loss.backward(); opt.step()
     model.eval()
-    Z, S, G = [], [], []
+    Z, S, G, G6 = [], [], [], []
     with torch.no_grad():
         for sid, X, Y, P in te:
             _, z = model(sx(X), sg(P), sg(Y))
-            Z.append(z.numpy()); S.append(np.full(len(z), sid)); G.append(X[:, -1, 0])
-    return np.concatenate(Z), np.concatenate(S), np.concatenate(G), rmse
+            Z.append(z.numpy()); S.append(np.full(len(z), sid)); G.append(X[:, -1, 0]); G6.append(X[:, -7, 0])
+    out = (np.concatenate(Z), np.concatenate(S), np.concatenate(G), rmse)
+    return out + (np.concatenate(G6),) if return_prev else out
 
 
 def main():

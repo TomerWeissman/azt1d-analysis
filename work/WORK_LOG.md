@@ -315,3 +315,12 @@ commits: pending (this week's commit)
 runtime: 77 s
 outcome: patients form one chain, same order in both seeds. Chain position vs mean glucose: AZT1D 0.99, HUPA-UCM 0.97 (absolute Spearman). Vs forecast error about 0.46, no more than mean glucose itself (0.49 AZT1D, 0.39 HUPA-UCM).
 notes: exploratory; 25 points per dataset, perplexity 5.
+
+## 2026-10-07 | 5_10 | Quick look: bottleneck t-SNE coloured by situation
+type: analysis
+status: done
+files: work/5_10/scripts/tsne_situation.py, work/5_10/scripts/tsne_bottleneck.py, work/5_10/figures/tsne_situation.png, work/5_10/README.md
+commits: pending (this week's commit)
+runtime: 141 s
+outcome: on both datasets the map splits into regions by current level, and within each region windows are ordered by 30-minute trend (fast rises and fast falls form separate bands). The encoder's structure matches the situation grid.
+notes: visual, not quantified. tsne_bottleneck.embed gained an optional return_prev flag (default unchanged).

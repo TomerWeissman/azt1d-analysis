@@ -34,6 +34,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 3. Prepare slides for the Thursday Oct 8 meeting with Volkan.
 
 ## Findings
+- The teacher-forcing encoder's map is organized by the same two things as the situation grid: level gives the large regions, trend orders windows within each region (fast rises and fast falls form their own bands). Visual only, but it suggests level and trend are what a predictive model needs to know, which supports the situation grid used for the bands.
 - **Caveat, by Clarke zone:** the situation band is about the same width in every zone (OhioT1DM 85-87 mg/dL in A, B, D), so it does not widen for badly wrong forecasts. It catches more in zone A (98% vs 96%) but fewer in zone B (44% vs 59%) and zone D, the dangerous misses (41% vs 62% OhioT1DM; 22% vs 39% AZT1D). GARCH widens somewhat after big errors, so it catches more of them. Situation-aware is not the same as error-aware.
 - Level-free check (H37): overall, all methods trade width for coverage almost identically. The situation bands' advantage is not overall efficiency; it is being honest in each situation (the per-situation results). CQR edges ahead on interval score. The paper should claim per-situation calibration, not overall efficiency.
 - Verification (H32-H35): situation grouping is real (beats shuffled groups), works across models, and survives patient resampling. The strongest rival is CQR, which comes close on OhioT1DM. The hybrid's edge over plain Mondrian is not statistically robust.
@@ -134,6 +135,8 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [figures/tsne_bottleneck.png](figures/tsne_bottleneck.png) | t-SNE coloured by patient forecast error, current glucose, and patient | current |
 | [scripts/tsne_patient_average.py](scripts/tsne_patient_average.py) | Quick look: t-SNE of each patient's average bottleneck, two seeds | current |
 | [figures/tsne_patient_average.png](figures/tsne_patient_average.png) | One dot per patient, coloured by CNN-LSTM error, AZT1D and HUPA-UCM, two seeds | current |
+| [scripts/tsne_situation.py](scripts/tsne_situation.py) | Quick look: window-level t-SNE coloured by situation (level, trend, both) | current |
+| [figures/tsne_situation.png](figures/tsne_situation.png) | t-SNE coloured by current level, 30-minute trend, and full situation, AZT1D and HUPA-UCM | current |
 | README.md | This page | current |
 
 ## Remember
