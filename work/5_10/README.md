@@ -141,6 +141,8 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [scripts/learned_situation_bands.py](scripts/learned_situation_bands.py) | H43: bands sized by the encoder summary (k-means groups, nearest neighbours) vs the hand-drawn grid | current |
 | [results/verdict_h43.txt](results/verdict_h43.txt) | H43 verdict and full table | current |
 | [figures/h43_learned_situation.png](figures/h43_learned_situation.png) | H43: per-situation error, interval score, zone D catch for four methods, two datasets | current |
+| [scripts/tsne_hupa_variables.py](scripts/tsne_hupa_variables.py) | Quick look: HUPA-UCM t-SNE coloured by every recorded variable | current |
+| [figures/tsne_hupa_variables.png](figures/tsne_hupa_variables.png) | HUPA-UCM t-SNE coloured by glucose, basal, bolus, carbs, heart rate, steps, calories, time of day | current |
 | README.md | This page | current |
 
 ## Remember

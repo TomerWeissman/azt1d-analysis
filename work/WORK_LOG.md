@@ -333,3 +333,12 @@ commits: pending (this week's commit); pre-registration pushed before the run
 runtime: 97 s
 outcome: H43 not supported. Interval score: AZT1D grid 114, k-means 114, kNN 113; OhioT1DM 131, 132, 132. Zone D caught: AZT1D 22%, 22%, 25%; OhioT1DM 41%, 43%, 36%. Per-situation error: grid 3.9 on both; learned 4.9-6.3.
 notes: per-situation error is measured on the hand-drawn situations, which favours the grid; but the learned versions also fail to gain on the two neutral measures. Encoder trained on first 64% per patient; windows checked aligned with the forecaster. One seed.
+
+## 2026-10-07 | 5_10 | Quick look: HUPA t-SNE coloured by each recorded variable
+type: analysis
+status: done
+files: work/5_10/scripts/tsne_hupa_variables.py, work/5_10/scripts/tsne_bottleneck.py, work/5_10/figures/tsne_hupa_variables.png, work/5_10/README.md
+commits: pending (this week's commit)
+runtime: 41 s
+outcome: glucose shows the smooth gradient seen before. Basal insulin shows clear regions (near-zero strand at top, a mid-basal mass, a high-basal strand at bottom); basal is largely set per patient (pump settings, or none recorded), so it acts as a second organizing factor tied to therapy setup. Bolus and carbs (mostly zero) show no clear structure. Heart rate, steps, calories and time of day (not encoder inputs) show no clear structure.
+notes: visual only. Raw rows checked aligned with encoded windows (glucose matches). tsne_bottleneck.embed gained an optional return_picks flag (defaults unchanged).

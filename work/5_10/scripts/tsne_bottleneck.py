@@ -48,13 +48,14 @@ def patients(name):
             yield sid, hupa.load_subject(sid, ROOT / hupa.DEFAULT_DIR)
 
 
-def embed(name, return_prev: bool = False):
+def embed(name, return_prev: bool = False, return_picks: bool = False):
     """Encode test windows. With return_prev=True also returns each window's glucose 30 minutes
-    (6 steps) before its last reading, for the situation trend."""
+    (6 steps) before its last reading, for the situation trend. With return_picks=True also
+    returns [(subject_id, window start indices)] in encoding order."""
     run, cap = DATASETS[name]
     torch.manual_seed(SEED)
     rng = np.random.default_rng(SEED)
-    tr, te, rmse = ([], [], []), [], {}
+    tr, te, rmse, picks = ([], [], []), [], {}, []
     for sid, d in patients(name):
         X, Y, P = windows(d)
         n = len(X)
@@ -67,6 +68,7 @@ def embed(name, return_prev: bool = False):
         te_idx = np.arange(cut_te, n)
         pick = np.sort(rng.choice(te_idx, min(TEST_PER_PATIENT, len(te_idx)), replace=False))
         te.append((sid, X[pick], Y[pick], P[pick]))
+        picks.append((sid, pick))
         rmse[sid] = float(ckpt.load_result(ROOT / "data" / "processed" / "checkpoints" / run, sid).rmse)
     Xtr, Ytr, Ptr = (np.concatenate(l) for l in tr)
     xm, xs = Xtr.reshape(-1, len(FEATURES)).mean(0), Xtr.reshape(-1, len(FEATURES)).std(0) + 1e-6
@@ -90,7 +92,11 @@ def embed(name, return_prev: bool = False):
             _, z = model(sx(X), sg(P), sg(Y))
             Z.append(z.numpy()); S.append(np.full(len(z), sid)); G.append(X[:, -1, 0]); G6.append(X[:, -7, 0])
     out = (np.concatenate(Z), np.concatenate(S), np.concatenate(G), rmse)
-    return out + (np.concatenate(G6),) if return_prev else out
+    if return_prev:
+        out = out + (np.concatenate(G6),)
+    if return_picks:
+        out = out + (picks,)
+    return out
 
 
 def main():
