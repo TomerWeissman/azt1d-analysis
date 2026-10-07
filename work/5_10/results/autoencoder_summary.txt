@@ -1,0 +1,14 @@
+H39 (bottleneck predicts patient glucose SD at least 15% better than mean glucose, LOO): NOT SUPPORTED
+Teacher-forcing encoder-decoder, PCA of the 8-number bottleneck (exploratory)
+  PCA explained variance: PC1 94%, PC2 5%
+  bottleneck check (teacher-forced next-hour error, test windows): real bottleneck RMSE 5.5 mg/dL, bottleneck set to zero 11.1 mg/dL
+  patient centroids: Spearman PC1 vs glucose SD: +0.65 (25 patients)
+  patient centroids: Spearman PC2 vs glucose SD: -0.46 (25 patients)
+  patient centroids: Spearman PC1 vs plain-model forecast RMSE: +0.48 (25 patients)
+  patient centroids: Spearman PC2 vs plain-model forecast RMSE: -0.54 (25 patients)
+  window level: Spearman PC1 vs current glucose: +0.99
+  patient centroids: Spearman PC1 vs mean glucose: +0.99
+  leave-one-patient-out error predicting glucose SD: bottleneck position 10.00, mean glucose alone 7.40, both 8.96 mg/dL; bottleneck vs mean-glucose cut -35%
+  leave-one-patient-out error predicting forecast RMSE: bottleneck position 6.93, mean glucose alone 6.07, both 6.97 mg/dL; bottleneck vs mean-glucose cut -14%
+  Spearman glucose SD vs forecast RMSE across patients: +0.82
+  runtime 69s, 8 epochs

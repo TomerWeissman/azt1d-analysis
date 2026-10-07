@@ -22,6 +22,7 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 - **H36, supported (by the rule; not robust on OhioT1DM)**: situation bands 19% better calibrated than tuned full-window CQR on OhioT1DM (4.0 vs 4.9 points), and narrower (87 vs 94). Patient-bootstrap interval -0.7 to 2.4 crosses zero. On AZT1D clearly better (3.8 vs 8.9; interval 2.4 to 6.1).
 - **H37, supported by the rule, but the effect is small**: at the same width, situation bands catch 0.1 to 1.8 more points than GARCH at every level, on both datasets. All methods' curves nearly overlap. On interval score, CQR is best on both datasets, situation bands close second.
 - **H38, not supported**: the combined band recovers most but not all of GARCH's zone D catch rate. OhioT1DM: GARCH 62%, situation 41%, combined 54% (8 points short). AZT1D: 39%, 22%, 34% (5 points short, just outside the rule).
+- **H39, not supported**: the teacher-forcing bottleneck mostly encodes current glucose (PC1 vs current glucose 0.99, 94% of variance). Predicting a patient's glucose SD from bottleneck position is 35% worse than from mean glucose alone (leave-one-patient-out).
 - **H17, pending**: personalization direction. To be decided with Prof. Watson.
 
 ## Goals for the week
@@ -114,6 +115,9 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [figures/h38_zone_catch.png](figures/h38_zone_catch.png) | H38: share caught per Clarke zone, three methods, two datasets | current |
 | [scripts/presentation_figure.py](scripts/presentation_figure.py) | Presentation figure: strength of situation-aware bands in plain terms | current |
 | [figures/presentation_situation_aware.png](figures/presentation_situation_aware.png) | Presentation figure: per-situation catch rates and four everyday situations (OhioT1DM), with the zone D trade-off in the footnote | current |
+| [scripts/teacher_forcing_autoencoder.py](scripts/teacher_forcing_autoencoder.py) | H39: teacher-forcing encoder-decoder, PCA of the bottleneck, patient-level checks | current |
+| [results/autoencoder_summary.txt](results/autoencoder_summary.txt) | H39 verdict, PCA shares, bottleneck check, LOO errors | current |
+| [figures/autoencoder_pca.png](figures/autoencoder_pca.png) | Bottleneck PCA coloured by patient glucose SD and forecast RMSE, plus patient centroids | current |
 | README.md | This page | current |
 
 ## Remember

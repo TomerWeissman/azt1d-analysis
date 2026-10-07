@@ -262,3 +262,12 @@ commits: pending (this week's commit); pre-registration pushed before the run
 runtime: about 1.5 min
 outcome: H38 not supported. Zone D caught: OhioT1DM GARCH 62%, situation 41%, combined 54% (-8 vs GARCH); AZT1D 39%, 22%, 34% (-5, just outside the rule). Combined recovers about 60-70% of the gap. Per-situation error stays 3.1 vs GARCH 6.0-6.7.
 notes: clear trade-off. GARCH is best on dangerous misses, situation bands best on per-situation honesty, the combined band sits between on both. Zones C and E omitted (too few points).
+
+## 2026-10-06 | 5_10 | Teacher-forcing encoder-decoder bottleneck PCA (H39)
+type: experiment
+status: done
+files: work/5_10/scripts/teacher_forcing_autoencoder.py, work/5_10/results/autoencoder_pca.csv, work/5_10/results/autoencoder_summary.txt, work/5_10/figures/autoencoder_pca.png, work/HYPOTHESES.md, work/5_10/README.md
+commits: pending (this week's commit); pre-registration pushed before the full run (a 1-epoch timing run was seen first, noted in the register)
+runtime: 69 s (8 epochs, CPU)
+outcome: H39 not supported. Bottleneck is used (decoder error 5.5 vs 11.1 mg/dL with it zeroed) but PC1 is current glucose (Spearman 0.99) and holds 94% of variance; PC2's arc is likely a horseshoe artifact of a curved 1D structure. LOO error predicting patient glucose SD: bottleneck 10.0, mean glucose 7.4 mg/dL.
+notes: a separate cluster at PC2 about -1.35 comes mostly from patient 10's windows; not investigated (possible data artifact). Global scaling used so patient differences are kept. One seed.
