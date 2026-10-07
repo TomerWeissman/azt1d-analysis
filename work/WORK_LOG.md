@@ -297,3 +297,12 @@ files: work/5_10/README.md
 commits: pending (this week's commit)
 outcome: user decided to stop the autoencoder and compressibility line (H39-H42), which produced no insight beyond glucose variability. Next steps to be discussed with Volkan (meeting Thursday Oct 8).
 notes: situation-aware bands (H27-H38) remain the main result.
+
+## 2026-10-07 | 5_10 | Quick look: t-SNE of the teacher-forcing bottleneck
+type: analysis
+status: done
+files: work/5_10/scripts/tsne_bottleneck.py, work/5_10/figures/tsne_bottleneck.png, work/5_10/README.md
+commits: pending (this week's commit)
+runtime: 158 s (both encoders retrained with the same settings and seed)
+outcome: same picture as PCA. The map is ordered by current glucose (smooth gradient on both datasets). Forecast-error colours are mixed with no error clusters; high-error windows sit at the high-glucose end. AZT1D patients are fully mixed; HUPA-UCM shows strands from consecutive overlapping windows and some low-glucose patients (18, 22) apart.
+notes: exploratory, after the predictability line was closed. Patient labels at average t-SNE positions are not meaningful (t-SNE distorts between-group distances).

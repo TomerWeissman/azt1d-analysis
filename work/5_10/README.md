@@ -130,6 +130,8 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [results/verdict_h41_h42.txt](results/verdict_h41_h42.txt) | H41/H42 verdicts and numbers | current |
 | [results/compressibility_patients.csv](results/compressibility_patients.csv) | Per-patient SD, sample entropy, bits per step, forecast RMSE | current |
 | [figures/compressibility.png](figures/compressibility.png) | Variability vs error, and error left over vs each compressibility measure | current |
+| [scripts/tsne_bottleneck.py](scripts/tsne_bottleneck.py) | Quick look: t-SNE of the teacher-forcing bottleneck, AZT1D and HUPA-UCM | current |
+| [figures/tsne_bottleneck.png](figures/tsne_bottleneck.png) | t-SNE coloured by patient forecast error, current glucose, and patient | current |
 | README.md | This page | current |
 
 ## Remember
