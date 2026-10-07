@@ -306,3 +306,12 @@ commits: pending (this week's commit)
 runtime: 158 s (both encoders retrained with the same settings and seed)
 outcome: same picture as PCA. The map is ordered by current glucose (smooth gradient on both datasets). Forecast-error colours are mixed with no error clusters; high-error windows sit at the high-glucose end. AZT1D patients are fully mixed; HUPA-UCM shows strands from consecutive overlapping windows and some low-glucose patients (18, 22) apart.
 notes: exploratory, after the predictability line was closed. Patient labels at average t-SNE positions are not meaningful (t-SNE distorts between-group distances).
+
+## 2026-10-07 | 5_10 | Quick look: t-SNE of each patient's average bottleneck
+type: analysis
+status: done
+files: work/5_10/scripts/tsne_patient_average.py, work/5_10/figures/tsne_patient_average.png, work/5_10/README.md
+commits: pending (this week's commit)
+runtime: 77 s
+outcome: patients form one chain, same order in both seeds. Chain position vs mean glucose: AZT1D 0.99, HUPA-UCM 0.97 (absolute Spearman). Vs forecast error about 0.46, no more than mean glucose itself (0.49 AZT1D, 0.39 HUPA-UCM).
+notes: exploratory; 25 points per dataset, perplexity 5.

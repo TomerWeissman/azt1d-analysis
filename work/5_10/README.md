@@ -132,6 +132,8 @@ Started Oct 4 at the user's request, a day early. Goals set at week start.
 | [figures/compressibility.png](figures/compressibility.png) | Variability vs error, and error left over vs each compressibility measure | current |
 | [scripts/tsne_bottleneck.py](scripts/tsne_bottleneck.py) | Quick look: t-SNE of the teacher-forcing bottleneck, AZT1D and HUPA-UCM | current |
 | [figures/tsne_bottleneck.png](figures/tsne_bottleneck.png) | t-SNE coloured by patient forecast error, current glucose, and patient | current |
+| [scripts/tsne_patient_average.py](scripts/tsne_patient_average.py) | Quick look: t-SNE of each patient's average bottleneck, two seeds | current |
+| [figures/tsne_patient_average.png](figures/tsne_patient_average.png) | One dot per patient, coloured by CNN-LSTM error, AZT1D and HUPA-UCM, two seeds | current |
 | README.md | This page | current |
 
 ## Remember
